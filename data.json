@@ -1,6 +1,12 @@
 {
   "version": 1,
-  "updated_at": "2026-09-22T15:54:18.018Z",
+  "updated_at": "2026-09-22T15:55:11.492Z",
   "store": "Shree Ganesh Medicals",
-  "records": {}
+  "records": {
+    "SGM-1887": {
+      "salt": "7R3ZDMt8SxyWb5fP6E3/0A==",
+      "iv": "1FOO3NnqN5Ka+rd1",
+      "data": "qGf7ARFPIitQXQZbtBD6DCVmHfbUvHa+BEG+XQZWDQ/QyTJTa2QsJA0KliL7QucRXRt8A7GNyHiQR8Dcgx7fl5+pOqMnjoPU9Bt6dUuyDcihDu+WnMuv0CwVSsDT6ign47PGqFYX+NphhD8XirhfrHTSU5JvO/r3P7Sw/EqJOEmLYSGwIiOfDnt236h1ThQeq4EYiCVrXCsy3xB91BXwRspvALaRVHwkl5w2LgpcUDl8BcyvW8TCqu/YPWvTw31hr4l/u8jSyLLlKBCA4sGne2MIcg+k0qLx5+oV0b+ejIdHBueRKtAWGDNqLEVH09/x28DIONYDcTFpLNh72uNP09ZqJyO9iD553A=="
+    }
+  }
 }
