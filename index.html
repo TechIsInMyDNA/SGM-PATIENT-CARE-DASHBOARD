@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>SGM Patient Care & Rx Timeline | Shree Ganesh Medicals</title>
+  <meta name="description" content="Military-Grade Encrypted Patient Prescription, Dose History & Refill Timeline Hub">
+  <meta name="theme-color" content="#0d9488">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SGM Rx Hub">
+
+  <!-- Tailwind CSS & Font Awesome -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0fdfa',
+              100: '#ccfbf1',
+              200: '#99f6e4',
+              300: '#5eead4',
+              400: '#2dd4bf',
+              500: '#14b8a6',
+              600: '#0d9488',
+              700: '#0f766e',
+              800: '#115e59',
+              900: '#134e4a',
+            }
+          }
+        }
+      }
+    };
+  </script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-mono-code {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .glass-nav {
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .spin-sync {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col pb-24 selection:bg-brand-500 selection:text-white">
+
+  <header class="sticky top-0 z-40 bg-white/95 border-b border-slate-200 glass-nav shadow-sm">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="App.routeHome()">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
+          <i class="fa-solid fa-mortar-pestle text-lg"></i>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="font-extrabold text-base tracking-tight text-slate-900 leading-none">SGM Rx TIMELINE</h1>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-800 uppercase tracking-wider">AES-256</span>
+          </div>
+          <p class="text-[11px] text-slate-500 font-medium mt-0.5">Shree Ganesh Medicals • Patient Care Hub</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <button id="syncStatusBtn" onclick="App.manualSync()" title="Click to synchronize with GitHub" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+          <i id="syncIcon" class="fa-solid fa-cloud text-brand-600"></i>
+          <span id="syncText" class="hidden sm:inline">Local Cache</span>
+        </button>
+
+        <button id="roleBadgeBtn" onclick="App.toggleRoleMode()" class="flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-600 text-white shadow-sm hover:bg-brand-700 transition">
+          <i id="roleIcon" class="fa-solid fa-user-shield text-xs"></i>
+          <span id="roleLabel">Admin</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto w-full px-4 pt-4 flex-1">
+
+    <!-- Toast Notification Element -->
+    <div id="toastBox" class="fixed top-16 right-4 z-50 transform translate-y-[-120%] opacity-0 transition-all duration-300 pointer-events-none">
+      <div id="toastContent" class="flex items-center space-x-3 px-4 py-3 rounded-xl shadow-xl border text-sm font-medium bg-white text-slate-800 border-slate-200">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-brand-600 text-lg"></i>
+        <span id="toastMsg">Action Successful</span>
+      </div>
+    </div>
+
+    <!-- PWA Install Banner -->
+    <div id="pwaBanner" class="hidden mb-4 bg-gradient-to-r from-teal-500 to-brand-600 text-white p-3.5 rounded-2xl shadow-md flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-sm">
+          <i class="fa-solid fa-mobile-screen-button"></i>
+        </div>
+        <div>
+          <h4 class="text-xs font-bold">Install SGM App on Phone</h4>
+          <p class="text-[11px] text-teal-100">Add to Home Screen for lightning-fast offline access.</p>
+        </div>
+      </div>
+      <button onclick="App.installPWA()" class="px-3 py-1.5 bg-white text-brand-700 rounded-lg text-xs font-bold shadow hover:bg-teal-50 transition">Install</button>
+    </div>
+
+    <section id="patientViewSection" class="hidden space-y-4">
+      <div class="bg-gradient-to-r from-brand-700 via-teal-700 to-slate-800 text-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
+        <div class="absolute -right-6 -bottom-6 w-36 h-36 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-white/20 uppercase tracking-widest font-mono-code" id="pvPatientCode">SGM-0000</span>
+              <span class="text-xs text-teal-200" id="pvLastUpdated">Updated: Just now</span>
+            </div>
+            <h2 class="text-2xl font-black mt-1" id="pvPatientName">Patient Prescription</h2>
+            <p class="text-xs text-teal-100 mt-0.5" id="pvPatientMeta">Contact: -- • Doctor: --</p>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <button onclick="App.openPassQrModal()" class="px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-semibold backdrop-blur-sm flex items-center space-x-2 transition">
+              <i class="fa-solid fa-qrcode text-sm"></i>
+              <span>Patient Pass</span>
+            </button>
+            <button onclick="App.sharePatientScheduleWhatsApp()" class="px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow flex items-center space-x-1.5 transition">
+              <i class="fa-brands fa-whatsapp text-sm"></i>
+              <span>Share Rx</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-white/20 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+          <div class="flex items-center space-x-2 text-rose-200">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <span class="font-bold">Allergies / Precautions:</span>
+            <span id="pvAllergies" class="text-white font-medium">None</span>
+          </div>
+          <div class="flex items-center space-x-2 text-teal-100">
+            <i class="fa-solid fa-stethoscope"></i>
+            <span class="font-bold">Conditions / Diagnosis:</span>
+            <span id="pvDiag" class="text-white font-medium">--</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline Schedule Filter Tabs -->
+      <div class="flex items-center space-x-2 overflow-x-auto pb-1 text-xs font-semibold custom-scroll">
+        <button onclick="App.filterDoseTime('all')" class="time-tab-btn active px-3.5 py-2 rounded-xl bg-slate-900 text-white transition flex-shrink-0" data-filter="all">
+          <i class="fa-solid fa-pills mr-1.5"></i>All Active (<span id="pvCountAll">0</span>)
+        </button>
+        <button onclick="App.filterDoseTime('morning')" class="time-tab-btn px-3.5 py-2 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition flex-shrink-0" data-filter="morning">
+          <i class="fa-solid fa-sun text-amber-500 mr-1.5"></i>Subah (Morning)
+        </button>
+        <button onclick="App.filterDoseTime('afternoon')" class="time-tab-btn px-3.5 py-2 rounded-xl bg-sky-50 text-sky-900 border border-sky-200 hover:bg-sky-100 transition flex-shrink-0" data-filter="afternoon">
+          <i class="fa-solid fa-cloud-sun text-sky-500 mr-1.5"></i>Dupahar (Afternoon)
+        </button>
+        <button onclick="App.filterDoseTime('evening')" class="time-tab-btn px-3.5 py-2 rounded-xl bg-orange-50 text-orange-900 border border-orange-200 hover:bg-orange-100 transition flex-shrink-0" data-filter="evening">
+          <i class="fa-solid fa-sunset text-orange-500 mr-1.5"></i>Shaam (Evening)
+        </button>
+        <button onclick="App.filterDoseTime('night')" class="time-tab-btn px-3.5 py-2 rounded-xl bg-indigo-50 text-indigo-900 border border-indigo-200 hover:bg-indigo-100 transition flex-shrink-0" data-filter="night">
+          <i class="fa-solid fa-moon text-indigo-500 mr-1.5"></i>Raat (Night)
+        </button>
+      </div>
+
+      <!-- Active Medication Cards Container -->
+      <div id="pvMedicationList" class="space-y-3"></div>
+
+      <!-- Dosage Alteration & Discontinuation Log -->
+      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
+        <button onclick="App.toggleAuditAccordion()" class="w-full flex items-center justify-between text-left">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-slate-800">Dose Changes & Stopped Medicines Log</h3>
+              <p class="text-[11px] text-slate-500">Full audit trail of prescriptions altered or stopped by doctor</p>
+            </div>
+          </div>
+          <i id="auditChevron" class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200"></i>
+        </button>
+        <div id="auditListContainer" class="hidden mt-4 pt-3 border-t border-slate-100 space-y-2.5"></div>
+      </div>
+
+      <!-- Pharmacy Support Notice -->
+      <div class="p-4 rounded-2xl bg-teal-50/80 border border-teal-200/70 flex items-start space-x-3 text-xs text-teal-900">
+        <i class="fa-solid fa-hand-holding-medical text-brand-600 text-base mt-0.5"></i>
+        <div>
+          <span class="font-bold">Shree Ganesh Medicals Refill Helpline:</span> Kisi bhi dawai ki samapti se pehle naya patta lene ya dose samajhne ke liye store par call ya visit karein.
+        </div>
+      </div>
+    </section>
+
+    <section id="adminViewSection" class="space-y-4">
+      <div class="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div class="relative w-full sm:w-80">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
+          <input type="text" id="adminSearchInput" oninput="App.renderAdminPatients()" placeholder="Search patient name, ID, phone..." class="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition">
+        </div>
+
+        <div class="flex items-center space-x-2 w-full sm:w-auto">
+          <button onclick="App.openPatientModal()" class="flex-1 sm:flex-none px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-600/20 flex items-center justify-center space-x-2 transition">
+            <i class="fa-solid fa-user-plus text-xs"></i>
+            <span>Naya Patient Add Karein</span>
+          </button>
+          <button onclick="App.openSettingsModal()" class="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs transition" title="GitHub Live Sync & Passphrase">
+            <i class="fa-solid fa-sliders text-sm"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Bar -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-base">
+            <i class="fa-solid fa-hospital-user"></i>
+          </div>
+          <div>
+            <div class="text-[11px] font-semibold text-slate-400 uppercase">Total Patients</div>
+            <div class="text-xl font-black text-slate-800" id="statTotalPatients">0</div>
+          </div>
+        </div>
+
+        <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-base">
+            <i class="fa-solid fa-pills"></i>
+          </div>
+          <div>
+            <div class="text-[11px] font-semibold text-slate-400 uppercase">Active Medicines</div>
+            <div class="text-xl font-black text-slate-800" id="statActiveMeds">0</div>
+          </div>
+        </div>
+
+        <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center text-base">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </div>
+          <div>
+            <div class="text-[11px] font-semibold text-slate-400 uppercase">Refill Alerts (&le;4d)</div>
+            <div class="text-xl font-black text-rose-600" id="statRefillAlerts">0</div>
+          </div>
+        </div>
+
+        <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center text-base">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <div>
+            <div class="text-[11px] font-semibold text-slate-400 uppercase">Encryption</div>
+            <div class="text-xs font-bold text-indigo-700 truncate" id="statCryptoBadge">AES-GCM Active</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Patient Cards Grid in Admin -->
+      <div id="adminPatientList" class="space-y-3"></div>
+    </section>
+
+  </main>
+
+  <!-- Settings & GitHub Sync Modal -->
+  <div id="settingsModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-sliders"></i>
+          </div>
+          <h3 class="font-bold text-slate-800 text-sm">GitHub Live Sync & Security Config</h3>
+        </div>
+        <button onclick="App.closeSettingsModal()" class="text-slate-400 hover:text-slate-600 transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto space-y-4 custom-scroll text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">GitHub Personal Access Token (PAT):</label>
+          <input type="password" id="cfgToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono-code focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+          <p class="text-[10px] text-slate-400 mt-1">Repo 'contents:write' permission token. Stored strictly in local browser storage.</p>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">GitHub Repository (owner/repo):</label>
+          <input type="text" id="cfgRepo" placeholder="username/sgm-rx-database" class="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono-code focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Database File Path:</label>
+          <input type="text" id="cfgPath" value="data.json" class="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono-code focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Master Encryption Passphrase:</label>
+          <input type="password" id="cfgPass" placeholder="Shree Ganesh Medicals Secret Passphrase" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+          <p class="text-[10px] text-slate-400 mt-1">Used to encrypt/decrypt records via AES-GCM (PBKDF2 100k rounds) before syncing to GitHub.</p>
+        </div>
+      </div>
+
+      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-end space-x-2">
+        <button onclick="App.closeSettingsModal()" class="px-4 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-100 text-xs">Cancel</button>
+        <button onclick="App.saveSettingsAndConnect()" class="px-4 py-2 rounded-xl bg-brand-600 text-white font-bold hover:bg-brand-700 text-xs shadow-md shadow-brand-600/20">Save & Sync</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Patient Registration Modal -->
+  <div id="patientModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-hospital-user"></i>
+          </div>
+          <h3 class="font-bold text-slate-800 text-sm" id="patientModalTitle">Register New Patient</h3>
+        </div>
+        <button onclick="App.closePatientModal()" class="text-slate-400 hover:text-slate-600 transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="patientForm" onsubmit="App.handleSavePatient(event)" class="p-6 overflow-y-auto space-y-3.5 custom-scroll text-xs">
+        <input type="hidden" id="pfEditId" value="">
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Patient Full Name *</label>
+          <input type="text" id="pfName" required placeholder="e.g. Ramesh Agrawal" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Mobile (WhatsApp) *</label>
+            <input type="tel" id="pfPhone" required placeholder="98XXXXXXXX" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Age & Gender</label>
+            <input type="text" id="pfAgeGender" placeholder="e.g. 54 / M" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Consulting Doctor / Clinic</label>
+          <input type="text" id="pfDoctor" placeholder="e.g. Dr. Verma (Cardiologist)" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Diagnosis / Conditions</label>
+          <input type="text" id="pfDiag" placeholder="e.g. Hypertension, Type 2 Diabetes" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Known Allergies / Precaution Notes</label>
+          <textarea id="pfNotes" rows="2" placeholder="e.g. Allergic to Sulfa drugs. Take with milk." class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none"></textarea>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end space-x-2">
+          <button type="button" onclick="App.closePatientModal()" class="px-4 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-100">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-brand-600 text-white font-bold hover:bg-brand-700 shadow-md shadow-brand-600/20">Save Patient</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Medicine Schedule Form Modal -->
+  <div id="medModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-sm">
+            <i class="fa-solid fa-capsules"></i>
+          </div>
+          <h3 class="font-bold text-slate-800 text-sm" id="medModalTitle">Add Medicine to Timeline</h3>
+        </div>
+        <button onclick="App.closeMedModal()" class="text-slate-400 hover:text-slate-600 transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="medForm" onsubmit="App.handleSaveMed(event)" class="p-6 overflow-y-auto space-y-3.5 custom-scroll text-xs">
+        <input type="hidden" id="mfPatientId" value="">
+        <input type="hidden" id="mfMedIndex" value="-1">
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Medicine Name & Strength *</label>
+          <input type="text" id="mfName" required placeholder="e.g. Telmisartan 40mg or Glycomet GP 1" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Time of Day (Kab Kab Lena Hai) *</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <label class="flex items-center space-x-2 p-2 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 has-[:checked]:bg-amber-50 has-[:checked]:border-amber-300">
+              <input type="checkbox" id="mfMorn" class="rounded text-brand-600">
+              <span class="font-bold text-amber-900">🌅 Subah</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 has-[:checked]:bg-sky-50 has-[:checked]:border-sky-300">
+              <input type="checkbox" id="mfNoon" class="rounded text-brand-600">
+              <span class="font-bold text-sky-900">☀️ Dupahar</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 has-[:checked]:bg-orange-50 has-[:checked]:border-orange-300">
+              <input type="checkbox" id="mfEve" class="rounded text-brand-600">
+              <span class="font-bold text-orange-900">🌇 Shaam</span>
+            </label>
+            <label class="flex items-center space-x-2 p-2 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 has-[:checked]:bg-indigo-50 has-[:checked]:border-indigo-300">
+              <input type="checkbox" id="mfNight" class="rounded text-brand-600">
+              <span class="font-bold text-indigo-900">🌙 Raat</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Khaane Ka Niyam (Meal Relation)</label>
+            <select id="mfMeal" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+              <option value="after">Khaane Ke Baad (After Meal)</option>
+              <option value="before">Khaane Se Pehle (Empty Stomach)</option>
+              <option value="with">Khaane Ke Saath (With Food)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Form / Type</label>
+            <select id="mfType" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+              <option value="Tablet">Tablet (Goli)</option>
+              <option value="Capsule">Capsule</option>
+              <option value="Syrup">Syrup</option>
+              <option value="Injection">Injection / Insulin</option>
+              <option value="Drops">Drops</option>
+              <option value="Ointment">Ointment / Cream</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Quantity in Strip (Stock)</label>
+            <input type="number" id="mfQty" min="0" placeholder="e.g. 30" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Total Dose Per Day</label>
+            <input type="number" id="mfPerDay" step="0.5" min="0.5" value="1" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+          </div>
+        </div>
+
+        <!-- Dose Alteration Notice (Shown if modifying an existing medicine) -->
+        <div id="mfReasonContainer" class="hidden">
+          <label class="block font-bold text-amber-900 mb-1">Doctor Dose Change Reason (Audit Log) *</label>
+          <input type="text" id="mfReason" placeholder="e.g. BP increased, doctor shifted from 40mg to 80mg" class="w-full px-3 py-2 rounded-xl border border-amber-300 bg-amber-50/50 focus:ring-2 focus:ring-amber-500/20 focus:outline-none">
+          <p class="text-[10px] text-amber-700 mt-1">This comment will be stamped with the current date in the patient audit history.</p>
+        </div>
+
+        <div class="pt-2 flex items-center justify-end space-x-2">
+          <button type="button" onclick="App.closeMedModal()" class="px-4 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-100">Cancel</button>
+          <button type="submit" class="px-5 py-2 rounded-xl bg-brand-600 text-white font-bold hover:bg-brand-700 shadow-md shadow-brand-600/20">Save Schedule</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Patient Pass QR Code Modal -->
+  <div id="qrModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col p-6 items-center text-center">
+      <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center text-xl mb-2">
+        <i class="fa-solid fa-qrcode"></i>
+      </div>
+      <h3 class="font-extrabold text-slate-800 text-base" id="qrPatientName">Patient Pass</h3>
+      <p class="text-xs text-slate-500 mt-0.5">Instant Zero-Token Rx View</p>
+
+      <div class="my-5 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center" id="qrCanvasBox"></div>
+
+      <p class="text-[11px] text-slate-400 mb-4 px-2">Scan with camera to load this prescription schedule on mobile.</p>
+
+      <div class="w-full flex space-x-2">
+        <button onclick="App.copyPatientLink()" class="flex-1 px-3 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200 transition">
+          <i class="fa-regular fa-copy mr-1"></i>Copy Link
+        </button>
+        <button onclick="App.closePassQrModal()" class="flex-1 px-3 py-2 rounded-xl bg-brand-600 text-white font-bold text-xs hover:bg-brand-700 transition">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CryptoEngine = {
+      async deriveKey(passphrase, salt) {
+        const enc = new TextEncoder();
+        const baseKey = await crypto.subtle.importKey(
+          "raw",
+          enc.encode(passphrase),
+          "PBKDF2",
+          false,
+          ["deriveKey"]
+        );
+        return await crypto.subtle.deriveKey(
+          {
+            name: "PBKDF2",
+            salt: salt,
+            iterations: 100000,
+            hash: "SHA-256"
+          },
+          baseKey,
+          { name: "AES-GCM", length: 256 },
+          false,
+          ["encrypt", "decrypt"]
+        );
+      },
+
+      async encryptObject(plainObj, passphrase) {
+        const salt = crypto.getRandomValues(new Uint8Array(16));
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const key = await this.deriveKey(passphrase, salt);
+        const encoded = new TextEncoder().encode(JSON.stringify(plainObj));
+
+        const cipherBuffer = await crypto.subtle.encrypt(
+          { name: "AES-GCM", iv },
+          key,
+          encoded
+        );
+
+        return {
+          salt: btoa(String.fromCharCode(...salt)),
+          iv: btoa(String.fromCharCode(...iv)),
+          data: btoa(String.fromCharCode(...new Uint8Array(cipherBuffer)))
+        };
+      },
+
+      async decryptObject(cipherPayload, passphrase) {
+        const salt = Uint8Array.from(atob(cipherPayload.salt), c => c.charCodeAt(0));
+        const iv = Uint8Array.from(atob(cipherPayload.iv), c => c.charCodeAt(0));
+        const cipherData = Uint8Array.from(atob(cipherPayload.data), c => c.charCodeAt(0));
+
+        const key = await this.deriveKey(passphrase, salt);
+        const decryptedBuffer = await crypto.subtle.decrypt(
+          { name: "AES-GCM", iv },
+          key,
+          cipherData
+        );
+
+        const decoded = new TextDecoder().decode(decryptedBuffer);
+        return JSON.parse(decoded);
+      },
+
+      generateAccessKey(length = 20) {
+        const charset = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+        const randomValues = crypto.getRandomValues(new Uint8Array(length));
+        return Array.from(randomValues).map(n => charset[n % charset.length]).join('');
+      }
+    };
+
+    const GitHubSync = {
+      async pullRemoteDatabase(cfg) {
+        if (!cfg.repo || !cfg.path) return null;
+        const url = `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}`;
+        const headers = cfg.token ? { 'Authorization': `Bearer ${cfg.token}` } : {};
+
+        const response = await fetch(url, { headers });
+        if (response.status === 404) {
+          return { sha: null, payload: { version: 1, last_sync: Date.now(), records: {} } };
+        }
+        if (!response.ok) {
+          throw new Error(`GitHub Sync Error (${response.status}): ${response.statusText}`);
+        }
+
+        const json = await response.json();
+        const contentStr = decodeURIComponent(escape(atob(json.content)));
+        return {
+          sha: json.sha,
+          payload: JSON.parse(contentStr)
+        };
+      },
+
+      async pushRemoteDatabase(cfg, dataPayload, lastSha) {
+        if (!cfg.token || !cfg.repo || !cfg.path) {
+          throw new Error("GitHub PAT and repository details are required to push updates.");
+        }
+        const url = `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}`;
+        const encodedContent = btoa(unescape(encodeURIComponent(JSON.stringify(dataPayload, null, 2))));
+
+        const requestBody = {
+          message: `SGM Rx Update: ${new Date().toISOString()}`,
+          content: encodedContent
+        };
+        if (lastSha) requestBody.sha = lastSha;
+
+        const response = await fetch(url, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${cfg.token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+          throw new Error(`Commit failed (${response.status}). Potential conflict or permissions issue.`);
+        }
+        const resJson = await response.json();
+        return resJson.content.sha;
+      }
+    };
+
+    const App = {
+      state: {
+        config: {
+          token: '',
+          repo: '',
+          path: 'data.json',
+          pass: ''
+        },
+        patients: {}, // in-memory decrypted store: { [id]: patientObj }
+        currentSha: null,
+        activeFilter: 'all',
+        mode: 'admin', // 'admin' | 'patient'
+        currentViewPatientId: null,
+        deferredPrompt: null
+      },
+
+      init() {
+        this.loadLocalConfig();
+        this.setupPWA();
+        this.checkRouting();
+        window.addEventListener('hashchange', () => this.checkRouting());
+      },
+
+      loadLocalConfig() {
+        const stored = localStorage.getItem('sgm_config');
+        if (stored) {
+          try {
+            this.state.config = { ...this.state.config, ...JSON.parse(stored) };
+          } catch(e) {}
+        }
+        const cachedPatients = localStorage.getItem('sgm_patients_cache');
+        if (cachedPatients) {
+          try {
+            this.state.patients = JSON.parse(cachedPatients);
+          } catch(e) {}
+        }
+      },
+
+      saveLocalConfig() {
+        localStorage.setItem('sgm_config', JSON.stringify(this.state.config));
+        localStorage.setItem('sgm_patients_cache', JSON.stringify(this.state.patients));
+      },
+
+      async checkRouting() {
+        const hash = window.location.hash;
+        if (hash.startsWith('#/view')) {
+          // Patient Zero-Token Viewer
+          const query = hash.split('?')[1] || '';
+          const params = new URLSearchParams(query);
+          const pid = params.get('id');
+          const pkey = params.get('key');
+
+          if (pid && pkey) {
+            await this.activatePatientMode(pid, pkey);
+            return;
+          }
+        }
+        // Fallback or Admin Home
+        this.activateAdminMode();
+      },
+
+      activateAdminMode() {
+        this.state.mode = 'admin';
+        document.getElementById('patientViewSection').classList.add('hidden');
+        document.getElementById('adminViewSection').classList.remove('hidden');
+        document.getElementById('roleLabel').innerText = 'Admin';
+        document.getElementById('roleIcon').className = 'fa-solid fa-user-shield text-xs';
+        document.getElementById('syncStatusBtn').classList.remove('hidden');
+
+        this.renderAdminPatients();
+        this.updateAdminMetrics();
+
+        if (this.state.config.token && this.state.config.repo) {
+          this.manualSync(false);
+        }
+      },
+
+      async activatePatientMode(pid, pkey) {
+        this.state.mode = 'patient';
+        this.state.currentViewPatientId = pid;
+        document.getElementById('adminViewSection').classList.add('hidden');
+        document.getElementById('patientViewSection').classList.remove('hidden');
+        document.getElementById('roleLabel').innerText = 'Patient Pass';
+        document.getElementById('roleIcon').className = 'fa-solid fa-eye text-xs';
+
+        // Check if we have remote data to fetch
+        this.showToast('Loading verified prescription...', 'info');
+        try {
+          const cfg = this.state.config;
+          let patientRecord = this.state.patients[pid];
+
+          if (!patientRecord && cfg.repo) {
+            // Fetch direct public data.json from GitHub contents or Raw without token!
+            const rawUrl = `https://raw.githubusercontent.com/${cfg.repo}/main/${cfg.path}?t=${Date.now()}`;
+            const res = await fetch(rawUrl);
+            if (res.ok) {
+              const remoteJson = await res.json();
+              if (remoteJson.records && remoteJson.records[pid]) {
+                const decrypted = await CryptoEngine.decryptObject(remoteJson.records[pid], pkey);
+                patientRecord = decrypted;
+                this.state.patients[pid] = decrypted;
+              }
+            }
+          }
+
+          if (patientRecord) {
+            this.renderPatientView(patientRecord);
+          } else {
+            this.showToast('Patient record not found or key invalid', 'error');
+          }
+        } catch (e) {
+          console.error(e);
+          this.showToast('Could not load record: ' + e.message, 'error');
+        }
+      },
+
+      routeHome() {
+        window.location.hash = '';
+        this.activateAdminMode();
+      },
+
+      toggleRoleMode() {
+        if (this.state.mode === 'admin') {
+          const patientIds = Object.keys(this.state.patients);
+          if (patientIds.length === 0) {
+            this.showToast('No patient records to preview', 'info');
+            return;
+          }
+          const p = this.state.patients[patientIds[0]];
+          window.location.hash = `#/view?id=${p.id}&key=${p.patientKey}`;
+        } else {
+          this.routeHome();
+        }
+      },
+
+      renderPatientView(p) {
+        document.getElementById('pvPatientCode').innerText = p.id;
+        document.getElementById('pvPatientName').innerText = p.name;
+        document.getElementById('pvPatientMeta').innerText = `Age/Gender: ${p.ageGender || 'N/A'} • Contact: ${p.phone} • Doctor: ${p.doctor || 'General'}`;
+        document.getElementById('pvLastUpdated').innerText = `Updated: ${new Date(p.updatedAt || Date.now()).toLocaleDateString()}`;
+        document.getElementById('pvAllergies').innerText = p.notes || 'No known allergies reported';
+        document.getElementById('pvDiag').innerText = p.diag || 'Routine Care';
+
+        const meds = p.medicines || [];
+        const activeMeds = meds.filter(m => !m.discontinued);
+        document.getElementById('pvCountAll').innerText = activeMeds.length;
+
+        this.renderPatientFilteredMeds(activeMeds);
+        this.renderPatientAuditLogs(meds);
+      },
+
+      filterDoseTime(filterName) {
+        this.state.activeFilter = filterName;
+        document.querySelectorAll('.time-tab-btn').forEach(btn => {
+          if (btn.dataset.filter === filterName) {
+            btn.classList.add('bg-slate-900', 'text-white');
+            btn.classList.remove('bg-amber-50', 'bg-sky-50', 'bg-orange-50', 'bg-indigo-50');
+          } else {
+            btn.classList.remove('bg-slate-900', 'text-white');
+          }
+        });
+
+        const p = this.state.patients[this.state.currentViewPatientId];
+        if (p) {
+          const activeMeds = (p.medicines || []).filter(m => !m.discontinued);
+          this.renderPatientFilteredMeds(activeMeds);
+        }
+      },
+
+      renderPatientFilteredMeds(meds) {
+        const container = document.getElementById('pvMedicationList');
+        const filter = this.state.activeFilter;
+
+        const filtered = meds.filter(m => {
+          if (filter === 'morning') return m.morn;
+          if (filter === 'afternoon') return m.noon;
+          if (filter === 'evening') return m.eve;
+          if (filter === 'night') return m.night;
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          container.innerHTML = `
+            <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-400">
+              <i class="fa-solid fa-prescription-bottle text-3xl mb-2 text-slate-300"></i>
+              <p class="text-xs font-semibold">Is samay ke liye koi dawai nirdharit nahi hai.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = filtered.map((m, idx) => {
+          const perDay = m.perDay || 1;
+          const daysLeft = Math.max(0, Math.floor((m.stockQty || 0) / perDay));
+          const isLow = daysLeft <= 4;
+
+          const mealLabel = m.meal === 'before'
+            ? '🍽️ Khaane Se Pehle (Empty Stomach)'
+            : (m.meal === 'with' ? '🍽️ Khaane Ke Saath' : '🍽️ Khaane Ke Baad');
+
+          return `
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="flex items-center space-x-2">
+                    <span class="text-xs font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-md">${m.type || 'Tablet'}</span>
+                    <h3 class="text-base font-extrabold text-slate-900">${m.name}</h3>
+                  </div>
+                  <div class="text-xs font-semibold text-slate-500 mt-1">${mealLabel}</div>
+                </div>
+
+                <div class="text-right">
+                  <div class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold ${isLow ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-slate-100 text-slate-700'}">
+                    <i class="fa-solid ${isLow ? 'fa-triangle-exclamation' : 'fa-box-open'} mr-1.5"></i>
+                    ${m.stockQty || 0} tabs (${daysLeft}d left)
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dose Time Badges -->
+              <div class="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-slate-100">
+                ${m.morn ? '<span class="px-2 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold flex items-center"><i class="fa-solid fa-sun text-amber-500 mr-1.5"></i>Subah (Morning)</span>' : ''}
+                ${m.noon ? '<span class="px-2 py-1 rounded-lg bg-sky-50 text-sky-900 border border-sky-200 text-xs font-bold flex items-center"><i class="fa-solid fa-cloud-sun text-sky-500 mr-1.5"></i>Dupahar (Afternoon)</span>' : ''}
+                ${m.eve ? '<span class="px-2 py-1 rounded-lg bg-orange-50 text-orange-900 border border-orange-200 text-xs font-bold flex items-center"><i class="fa-solid fa-sunset text-orange-500 mr-1.5"></i>Shaam (Evening)</span>' : ''}
+                ${m.night ? '<span class="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-900 border border-indigo-200 text-xs font-bold flex items-center"><i class="fa-solid fa-moon text-indigo-500 mr-1.5"></i>Raat (Night)</span>' : ''}
+              </div>
+            </div>
+          `;
+        }).join('');
+      },
+
+      renderPatientAuditLogs(meds) {
+        const container = document.getElementById('auditListContainer');
+        const auditEntries = [];
+
+        meds.forEach(m => {
+          if (m.history && m.history.length > 0) {
+            m.history.forEach(h => {
+              auditEntries.push({ medName: m.name, ...h });
+            });
+          }
+          if (m.discontinued) {
+            auditEntries.push({
+              medName: m.name,
+              date: m.discontinuedDate || 'Past Record',
+              reason: m.discontinuedReason || 'Discontinued by Doctor'
+            });
+          }
+        });
+
+        if (auditEntries.length === 0) {
+          container.innerHTML = '<p class="text-xs text-slate-400">No revisions or alterations on record.</p>';
+          return;
+        }
+
+        container.innerHTML = auditEntries.map(e => `
+          <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-slate-800">${e.medName}</span>
+              <span class="text-[10px] text-slate-400 font-mono-code">${e.date}</span>
+            </div>
+            <p class="text-slate-600">${e.reason || e.note || 'Dosage altered by physician'}</p>
+          </div>
+        `).join('');
+      },
+
+      toggleAuditAccordion() {
+        const container = document.getElementById('auditListContainer');
+        const chevron = document.getElementById('auditChevron');
+        container.classList.toggle('hidden');
+        chevron.style.transform = container.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+      },
+
+      renderAdminPatients() {
+        const container = document.getElementById('adminPatientList');
+        const query = (document.getElementById('adminSearchInput').value || '').toLowerCase().trim();
+        const patients = Object.values(this.state.patients);
+
+        const filtered = patients.filter(p => {
+          return (p.name || '').toLowerCase().includes(query) ||
+                 (p.id || '').toLowerCase().includes(query) ||
+                 (p.phone || '').includes(query) ||
+                 (p.doctor || '').toLowerCase().includes(query);
+        });
+
+        if (filtered.length === 0) {
+          container.innerHTML = `
+            <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-400">
+              <i class="fa-solid fa-users text-4xl mb-3 text-slate-300"></i>
+              <h3 class="text-sm font-bold text-slate-600">No Patient Records Found</h3>
+              <p class="text-xs text-slate-400 mt-1">Naya patient add karein ya search filter badlein.</p>
+            </div>
+          `;
+          return;
+        }
+
+        container.innerHTML = filtered.map(p => {
+          const activeCount = (p.medicines || []).filter(m => !m.discontinued).length;
+          const shareUrl = this.getShareUrl(p);
+
+          return `
+            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:border-brand-500/40 transition">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div class="flex items-center space-x-2">
+                    <span class="text-[11px] font-bold font-mono-code px-2 py-0.5 rounded bg-brand-50 text-brand-700">${p.id}</span>
+                    <h3 class="text-base font-extrabold text-slate-900">${p.name}</h3>
+                  </div>
+                  <p class="text-xs text-slate-500 mt-0.5">📞 ${p.phone} • 🩺 ${p.doctor || 'General'} • 💊 ${activeCount} Active Rx</p>
+                </div>
+
+                <div class="flex items-center flex-wrap gap-1.5">
+                  <button onclick="App.openMedModal('${p.id}')" class="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs flex items-center transition">
+                    <i class="fa-solid fa-plus mr-1"></i>Add Med
+                  </button>
+                  <button onclick="App.viewPatientAsPass('${p.id}')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center transition">
+                    <i class="fa-solid fa-eye mr-1"></i>View
+                  </button>
+                  <button onclick="App.openPassQrModalForPatient('${p.id}')" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs transition" title="Patient QR Pass">
+                    <i class="fa-solid fa-qrcode"></i>
+                  </button>
+                  <a href="https://wa.me/91${p.phone}?text=${encodeURIComponent(`Namaste ${p.name} ji, Shree Ganesh Medicals se aapka digital prescription schedule timeline taiyar hai. Dekhne ke liye click karein: ${shareUrl}`)}" target="_blank" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs transition" title="Send WhatsApp">
+                    <i class="fa-brands fa-whatsapp text-sm"></i>
+                  </a>
+                  <button onclick="App.openPatientModal('${p.id}')" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs transition" title="Edit Patient Details">
+                    <i class="fa-solid fa-pen-to-square"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Compact Pills Strip in Admin Card -->
+              ${(p.medicines && p.medicines.length > 0) ? `
+                <div class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2">
+                  ${p.medicines.map((m, mIdx) => `
+                    <div class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs border ${m.discontinued ? 'bg-slate-50 text-slate-400 border-slate-200' : 'bg-slate-50 text-slate-800 border-slate-200'}">
+                      <span class="font-bold">${m.name}</span>
+                      ${!m.discontinued ? `
+                        <button onclick="App.openEditMedModal('${p.id}', ${mIdx})" class="text-brand-600 hover:text-brand-800 ml-1">
+                          <i class="fa-solid fa-pencil text-[10px]"></i>
+                        </button>
+                        <button onclick="App.discontinueMedicine('${p.id}', ${mIdx})" class="text-rose-500 hover:text-rose-700 ml-1" title="Mark Discontinued">
+                          <i class="fa-solid fa-ban text-[10px]"></i>
+                        </button>
+                      ` : '<span class="text-[10px] text-rose-500">(Stopped)</span>'}
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('');
+      },
+
+      updateAdminMetrics() {
+        const patients = Object.values(this.state.patients);
+        document.getElementById('statTotalPatients').innerText = patients.length;
+
+        let totalMeds = 0;
+        let refillAlerts = 0;
+
+        patients.forEach(p => {
+          (p.medicines || []).forEach(m => {
+            if (!m.discontinued) {
+              totalMeds++;
+              const days = Math.floor((m.stockQty || 0) / (m.perDay || 1));
+              if (days <= 4) refillAlerts++;
+            }
+          });
+        });
+
+        document.getElementById('statActiveMeds').innerText = totalMeds;
+        document.getElementById('statRefillAlerts').innerText = refillAlerts;
+      },
+
+      viewPatientAsPass(pid) {
+        const p = this.state.patients[pid];
+        if (!p) return;
+        window.location.hash = `#/view?id=${p.id}&key=${p.patientKey}`;
+      },
+
+      getShareUrl(p) {
+        const base = window.location.origin + window.location.pathname;
+        return `${base}#/view?id=${p.id}&key=${p.patientKey}`;
+      },
+
+      openPatientModal(editId = '') {
+        const modal = document.getElementById('patientModal');
+        const form = document.getElementById('patientForm');
+        form.reset();
+        document.getElementById('pfEditId').value = editId;
+
+        if (editId && this.state.patients[editId]) {
+          const p = this.state.patients[editId];
+          document.getElementById('patientModalTitle').innerText = 'Edit Patient Details';
+          document.getElementById('pfName').value = p.name || '';
+          document.getElementById('pfPhone').value = p.phone || '';
+          document.getElementById('pfAgeGender').value = p.ageGender || '';
+          document.getElementById('pfDoctor').value = p.doctor || '';
+          document.getElementById('pfDiag').value = p.diag || '';
+          document.getElementById('pfNotes').value = p.notes || '';
+        } else {
+          document.getElementById('patientModalTitle').innerText = 'Register New Patient';
+        }
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      },
+
+      closePatientModal() {
+        const modal = document.getElementById('patientModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      },
+
+      async handleSavePatient(e) {
+        e.preventDefault();
+        const editId = document.getElementById('pfEditId').value;
+        const name = document.getElementById('pfName').value.trim();
+        const phone = document.getElementById('pfPhone').value.trim();
+
+        if (!name || !phone) return;
+
+        let patientObj;
+        if (editId && this.state.patients[editId]) {
+          patientObj = this.state.patients[editId];
+          patientObj.name = name;
+          patientObj.phone = phone;
+          patientObj.ageGender = document.getElementById('pfAgeGender').value.trim();
+          patientObj.doctor = document.getElementById('pfDoctor').value.trim();
+          patientObj.diag = document.getElementById('pfDiag').value.trim();
+          patientObj.notes = document.getElementById('pfNotes').value.trim();
+          patientObj.updatedAt = Date.now();
+        } else {
+          const newId = 'SGM-' + Math.floor(1000 + Math.random() * 9000);
+          patientObj = {
+            id: newId,
+            name: name,
+            phone: phone,
+            ageGender: document.getElementById('pfAgeGender').value.trim(),
+            doctor: document.getElementById('pfDoctor').value.trim(),
+            diag: document.getElementById('pfDiag').value.trim(),
+            notes: document.getElementById('pfNotes').value.trim(),
+            patientKey: CryptoEngine.generateAccessKey(24),
+            medicines: [],
+            createdAt: Date.now(),
+            updatedAt: Date.now()
+          };
+          this.state.patients[newId] = patientObj;
+        }
+
+        this.closePatientModal();
+        this.saveLocalConfig();
+        this.renderAdminPatients();
+        this.updateAdminMetrics();
+        this.showToast('Patient record saved locally');
+
+        // Trigger Live Sync if connected
+        if (this.state.config.token) {
+          await this.pushToGitHub();
+        }
+      },
+
+      openMedModal(pid) {
+        document.getElementById('mfPatientId').value = pid;
+        document.getElementById('mfMedIndex').value = '-1';
+        document.getElementById('medForm').reset();
+        document.getElementById('medModalTitle').innerText = 'Add Medicine to Timeline';
+        document.getElementById('mfReasonContainer').classList.add('hidden');
+
+        const modal = document.getElementById('medModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      },
+
+      openEditMedModal(pid, medIndex) {
+        const p = this.state.patients[pid];
+        if (!p || !p.medicines[medIndex]) return;
+        const m = p.medicines[medIndex];
+
+        document.getElementById('mfPatientId').value = pid;
+        document.getElementById('mfMedIndex').value = medIndex;
+        document.getElementById('medModalTitle').innerText = 'Modify Dose / Strength';
+
+        document.getElementById('mfName').value = m.name;
+        document.getElementById('mfMorn').checked = !!m.morn;
+        document.getElementById('mfNoon').checked = !!m.noon;
+        document.getElementById('mfEve').checked = !!m.eve;
+        document.getElementById('mfNight').checked = !!m.night;
+        document.getElementById('mfMeal').value = m.meal || 'after';
+        document.getElementById('mfType').value = m.type || 'Tablet';
+        document.getElementById('mfQty').value = m.stockQty || 0;
+        document.getElementById('mfPerDay').value = m.perDay || 1;
+
+        document.getElementById('mfReasonContainer').classList.remove('hidden');
+        document.getElementById('mfReason').value = '';
+
+        const modal = document.getElementById('medModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      },
+
+      closeMedModal() {
+        const modal = document.getElementById('medModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      },
+
+      async handleSaveMed(e) {
+        e.preventDefault();
+        const pid = document.getElementById('mfPatientId').value;
+        const medIndex = parseInt(document.getElementById('mfMedIndex').value);
+        const p = this.state.patients[pid];
+        if (!p) return;
+
+        const medObj = {
+          name: document.getElementById('mfName').value.trim(),
+          morn: document.getElementById('mfMorn').checked,
+          noon: document.getElementById('mfNoon').checked,
+          eve: document.getElementById('mfEve').checked,
+          night: document.getElementById('mfNight').checked,
+          meal: document.getElementById('mfMeal').value,
+          type: document.getElementById('mfType').value,
+          stockQty: parseFloat(document.getElementById('mfQty').value) || 0,
+          perDay: parseFloat(document.getElementById('mfPerDay').value) || 1,
+          discontinued: false
+        };
+
+        if (medIndex >= 0) {
+          const old = p.medicines[medIndex];
+          const reason = document.getElementById('mfReason').value.trim() || 'Dose revised by physician';
+          medObj.history = old.history || [];
+          medObj.history.unshift({
+            date: new Date().toLocaleDateString(),
+            reason: reason,
+            prevStock: old.stockQty
+          });
+          p.medicines[medIndex] = medObj;
+        } else {
+          if (!p.medicines) p.medicines = [];
+          p.medicines.push(medObj);
+        }
+
+        p.updatedAt = Date.now();
+        this.closeMedModal();
+        this.saveLocalConfig();
+        this.renderAdminPatients();
+        this.updateAdminMetrics();
+        this.showToast('Medicine schedule updated');
+
+        if (this.state.config.token) {
+          await this.pushToGitHub();
+        }
+      },
+
+      async discontinueMedicine(pid, medIndex) {
+        const p = this.state.patients[pid];
+        if (!p || !p.medicines[medIndex]) return;
+
+        p.medicines[medIndex].discontinued = true;
+        p.medicines[medIndex].discontinuedDate = new Date().toLocaleDateString();
+        p.medicines[medIndex].discontinuedReason = 'Stopped / Completed course';
+        p.updatedAt = Date.now();
+
+        this.saveLocalConfig();
+        this.renderAdminPatients();
+        this.updateAdminMetrics();
+        this.showToast('Medicine archived in stopped history');
+
+        if (this.state.config.token) {
+          await this.pushToGitHub();
+        }
+      },
+
+      openPassQrModalForPatient(pid) {
+        const p = this.state.patients[pid];
+        if (!p) return;
+        this.generateQrModal(p);
+      },
+
+      openPassQrModal() {
+        const p = this.state.patients[this.state.currentViewPatientId];
+        if (p) this.generateQrModal(p);
+      },
+
+      generateQrModal(p) {
+        document.getElementById('qrPatientName').innerText = p.name;
+        const box = document.getElementById('qrCanvasBox');
+        box.innerHTML = '';
+        const shareUrl = this.getShareUrl(p);
+
+        new QRCode(box, {
+          text: shareUrl,
+          width: 190,
+          height: 190,
+          colorDark: "#0f172a",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+
+        const modal = document.getElementById('qrModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      },
+
+      closePassQrModal() {
+        const modal = document.getElementById('qrModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      },
+
+      copyPatientLink() {
+        const p = this.state.patients[this.state.currentViewPatientId] || Object.values(this.state.patients)[0];
+        if (!p) return;
+        const url = this.getShareUrl(p);
+
+        const tempInput = document.createElement("input");
+        tempInput.value = url;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempInput);
+
+        this.showToast('Patient Pass link copied to clipboard!');
+      },
+
+      sharePatientScheduleWhatsApp() {
+        const p = this.state.patients[this.state.currentViewPatientId];
+        if (!p) return;
+        const url = this.getShareUrl(p);
+        const text = encodeURIComponent(`Namaste ${p.name} ji, Shree Ganesh Medicals se aapka live medication timeline link: ${url}`);
+        window.open(`https://wa.me/91${p.phone}?text=${text}`, '_blank');
+      },
+
+      openSettingsModal() {
+        const cfg = this.state.config;
+        document.getElementById('cfgToken').value = cfg.token || '';
+        document.getElementById('cfgRepo').value = cfg.repo || '';
+        document.getElementById('cfgPath').value = cfg.path || 'data.json';
+        document.getElementById('cfgPass').value = cfg.pass || '';
+
+        const modal = document.getElementById('settingsModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      },
+
+      closeSettingsModal() {
+        const modal = document.getElementById('settingsModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      },
+
+      async saveSettingsAndConnect() {
+        this.state.config.token = document.getElementById('cfgToken').value.trim();
+        this.state.config.repo = document.getElementById('cfgRepo').value.trim();
+        this.state.config.path = document.getElementById('cfgPath').value.trim() || 'data.json';
+        this.state.config.pass = document.getElementById('cfgPass').value.trim();
+
+        this.saveLocalConfig();
+        this.closeSettingsModal();
+        this.showToast('Settings saved. Syncing with GitHub...');
+        await this.manualSync(true);
+      },
+
+      async manualSync(showFeedback = true) {
+        const cfg = this.state.config;
+        if (!cfg.repo) {
+          if (showFeedback) this.openSettingsModal();
+          return;
+        }
+
+        const icon = document.getElementById('syncIcon');
+        const text = document.getElementById('syncText');
+        icon.className = 'fa-solid fa-arrows-rotate spin-sync text-amber-500';
+        text.innerText = 'Syncing...';
+
+        try {
+          // 1. Pull Remote
+          const remote = await GitHubSync.pullRemoteDatabase(cfg);
+          if (remote) {
+            this.state.currentSha = remote.sha;
+            const records = remote.payload.records || {};
+
+            // If we have master password, decrypt records
+            if (cfg.pass) {
+              for (const pid in records) {
+                try {
+                  const decrypted = await CryptoEngine.decryptObject(records[pid], cfg.pass);
+                  this.state.patients[pid] = decrypted;
+                } catch (err) {
+                  console.warn(`Could not decrypt patient ${pid} with current pass.`);
+                }
+              }
+            }
+          }
+
+          // 2. If we have token, push our local state to ensure both are synchronized
+          if (cfg.token && cfg.pass) {
+            await this.pushToGitHub();
+          }
+
+          icon.className = 'fa-solid fa-cloud text-brand-600';
+          text.innerText = 'Synced';
+          if (showFeedback) this.showToast('Synchronized with GitHub cloud');
+        } catch (err) {
+          console.error(err);
+          icon.className = 'fa-solid fa-cloud-arrow-down text-rose-500';
+          text.innerText = 'Sync Error';
+          if (showFeedback) this.showToast('Sync Failed: ' + err.message, 'error');
+        }
+
+        this.renderAdminPatients();
+        this.updateAdminMetrics();
+      },
+
+      async pushToGitHub() {
+        const cfg = this.state.config;
+        if (!cfg.token || !cfg.repo || !cfg.pass) return;
+
+        // Encrypt each patient before pushing
+        const encryptedRecords = {};
+        for (const pid in this.state.patients) {
+          const patientObj = this.state.patients[pid];
+          // Encrypt with Master Passphrase so Admin can pull
+          encryptedRecords[pid] = await CryptoEngine.encryptObject(patientObj, cfg.pass);
+        }
+
+        const dbPayload = {
+          version: 1,
+          updated_at: new Date().toISOString(),
+          store: "Shree Ganesh Medicals",
+          records: encryptedRecords
+        };
+
+        const newSha = await GitHubSync.pushRemoteDatabase(cfg, dbPayload, this.state.currentSha);
+        this.state.currentSha = newSha;
+      },
+
+      setupPWA() {
+        window.addEventListener('beforeinstallprompt', (e) => {
+          e.preventDefault();
+          this.state.deferredPrompt = e;
+          const banner = document.getElementById('pwaBanner');
+          if (banner) banner.classList.remove('hidden');
+        });
+
+        // Register in-memory manifest blob
+        const manifestObj = {
+          name: "SGM Patient Rx Hub",
+          short_name: "SGM Rx",
+          start_url: window.location.href,
+          display: "standalone",
+          background_color: "#0d9488",
+          theme_color: "#0d9488",
+          icons: [
+            {
+              src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230d9488'/><text y='.7em' x='50%' text-anchor='middle' font-size='60'>💊</text></svg>",
+              sizes: "192x192 512x512",
+              type: "image/svg+xml"
+            }
+          ]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: 'application/json' });
+        const manifestUrl = URL.createObjectURL(manifestBlob);
+        const link = document.createElement('link');
+        link.rel = 'manifest';
+        link.href = manifestUrl;
+        document.head.appendChild(link);
+
+        // Register in-memory service worker
+        if ('serviceWorker' in navigator) {
+          const swCode = `
+            const CACHE_NAME = 'sgm-rx-cache-v1';
+            self.addEventListener('install', (e) => self.skipWaiting());
+            self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
+            self.addEventListener('fetch', (e) => {
+              e.respondWith(
+                fetch(e.request).catch(() => caches.match(e.request))
+              );
+            });
+          `;
+          const swBlob = new Blob([swCode], { type: 'text/javascript' });
+          const swUrl = URL.createObjectURL(swBlob);
+          navigator.serviceWorker.register(swUrl).catch(() => {});
+        }
+      },
+
+      installPWA() {
+        if (this.state.deferredPrompt) {
+          this.state.deferredPrompt.prompt();
+          this.state.deferredPrompt.userChoice.then(() => {
+            this.state.deferredPrompt = null;
+            document.getElementById('pwaBanner').classList.add('hidden');
+          });
+        } else {
+          this.showToast('Tap browser menu (...) and choose "Add to Home Screen"');
+        }
+      },
+
+      showToast(msg, type = 'success') {
+        const box = document.getElementById('toastBox');
+        const icon = document.getElementById('toastIcon');
+        const text = document.getElementById('toastMsg');
+
+        text.innerText = msg;
+        if (type === 'error') {
+          icon.className = 'fa-solid fa-circle-xmark text-rose-500 text-lg';
+        } else if (type === 'info') {
+          icon.className = 'fa-solid fa-circle-info text-sky-500 text-lg';
+        } else {
+          icon.className = 'fa-solid fa-circle-check text-brand-600 text-lg';
+        }
+
+        box.classList.remove('translate-y-[-120%]', 'opacity-0');
+        box.classList.add('translate-y-0', 'opacity-100');
+
+        setTimeout(() => {
+          box.classList.add('translate-y-[-120%]', 'opacity-0');
+          box.classList.remove('translate-y-0', 'opacity-100');
+        }, 3200);
+      }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => App.init());
+  </script>
+</body>
+</html>
