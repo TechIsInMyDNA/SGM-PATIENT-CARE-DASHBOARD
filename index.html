@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -51,10 +51,13 @@
         </div>
       </div>
       <div class="flex items-center space-x-2">
+        <button id="topExportBtn" onclick="exportToExcel()" class="h-8 px-2.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center transition-all text-xs font-bold gap-1" title="Export to Excel">
+          <i class="fa-solid fa-file-excel text-emerald-300"></i> <span class="hidden sm:inline">Excel</span>
+        </button>
         <button id="topSyncBtn" onclick="manualSync()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center transition-all text-sm" title="Sync Cloud Data">
           <i class="fa-solid fa-rotate" id="syncSpinner"></i>
         </button>
-        <button id="topSettingsBtn" onclick="openModal('settingsModal')" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center transition-all text-sm" title="Settings">
+        <button id="topSettingsBtn" onclick="openModal('settingsModal')" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center transition-all text-sm" title="Settings & Backup">
           <i class="fa-solid fa-gear"></i>
         </button>
       </div>
@@ -75,18 +78,33 @@
 
   <!-- MAIN VIEWPORT -->
   <main class="max-w-2xl mx-auto w-full px-4 pt-4 flex-1">
-    <!-- VIEW CONTAINER RENDERED BY ROUTER -->
     <div id="viewRoot"></div>
   </main>
 
-  <!-- SETTINGS MODAL -->
+  <!-- SETTINGS & BACKUP/RESTORE MODAL -->
   <div id="settingsModal" class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 sheet-up max-h-[90vh] overflow-y-auto shadow-2xl">
       <div class="flex justify-between items-center pb-4 border-b border-slate-100">
         <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <i class="fa-solid fa-sliders text-brand-600"></i> Cloud & Security Config
+          <i class="fa-solid fa-sliders text-brand-600"></i> Cloud Config & Backups
         </h2>
         <button onclick="closeModal('settingsModal')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <!-- LOCAL BACKUP & RESTORE SECTION -->
+      <div class="mt-4 p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
+        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+          <i class="fa-solid fa-database text-brand-600"></i> Offline Backup & Restore
+        </h3>
+        <div class="flex gap-2">
+          <button onclick="downloadJsonBackup()" class="flex-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs">
+            <i class="fa-solid fa-download text-teal-600"></i> Download Backup
+          </button>
+          <label class="flex-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer">
+            <i class="fa-solid fa-upload text-blue-600"></i> Restore File
+            <input type="file" id="restoreFileInput" accept=".json" onchange="restoreJsonBackup(event)" class="hidden">
+          </label>
+        </div>
       </div>
 
       <div class="mt-4 space-y-4 text-sm">
@@ -108,9 +126,9 @@
 
         <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
           <label class="block text-xs font-bold text-amber-800 flex items-center gap-1.5">
-            <i class="fa-solid fa-shield-halved"></i> Master AES-GCM Encryption Key:
+            <i class="fa-solid fa-shield-halved"></i> Master AES-GCM Passphrase:
           </label>
-          <input type="password" id="cfgPass" placeholder="Master Key to encrypt & decrypt data" class="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 font-mono text-xs bg-white">
+          <input type="password" id="cfgPass" placeholder="Master Key to encrypt & decrypt index" class="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 font-mono text-xs bg-white">
           <p class="text-[11px] text-amber-700">Encrypted on device. No unencrypted text is ever stored on GitHub.</p>
         </div>
       </div>
@@ -186,7 +204,6 @@
           <input type="text" id="mName" required placeholder="e.g. Telmisartan 40mg / Glycomet GP 1" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 font-medium">
         </div>
 
-        <!-- DOSE SCHEDULE SELECTION WITH QUANTITIES -->
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1.5">Dose Schedule & Tablet Quantity Per Time:</label>
           <div class="grid grid-cols-2 gap-2 text-xs">
@@ -249,10 +266,9 @@
 
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Doctor's Remark / Instruction</label>
-          <input type="text" id="mInstructions" placeholder="e.g. Paani khoob piyein / BP high hone par" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500">
+          <input type="text" id="mInstructions" placeholder="e.g. Paani khoob piyein / BP check karte rahein" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500">
         </div>
 
-        <!-- SPECIFIC DOCTOR REVISION TOGGLE (ONLY REVISED WHEN THIS BUTTON IS CLICKED/CHECKED) -->
         <div id="reviseContainer" class="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-2">
           <label class="flex items-center space-x-2.5 cursor-pointer">
             <input type="checkbox" id="isDoctorRevised" onchange="toggleRevisionNote(this.checked)" class="w-4 h-4 rounded text-rose-600 focus:ring-rose-500">
@@ -261,7 +277,7 @@
             </span>
           </label>
           <p class="text-[11px] text-rose-600 leading-tight">
-            Agar doctor ne dose badla hai toh is button ko tick karein. Tabhi purani dose revision history me jayegi. Simple typo ya quantity update ke liye ise tick na karein.
+            Agar doctor ne dose badla hai toh tick karein. Tabhi purani dose revision history me jayegi.
           </p>
           <div id="reviseReasonWrap" class="hidden pt-1">
             <label class="block text-[11px] font-semibold text-rose-800 mb-1">Revision Reason:</label>
@@ -303,7 +319,7 @@
 
   <script>
     // ==========================================
-    // 1. APPLICATION STATE & STORAGE ENGINE
+    // 1. CONFIG & STORAGE ENGINE
     // ==========================================
     const DEFAULT_CONFIG = {
       token: '',
@@ -315,15 +331,15 @@
     let APP_STATE = {
       config: { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem('sgm_cfg') || '{}') },
       patients: JSON.parse(localStorage.getItem('sgm_patients') || '{}'),
+      patientKeys: JSON.parse(localStorage.getItem('sgm_p_keys') || '{}'),
       currentPatientId: null,
       isPatientView: false,
-      activeFilter: 'all',
       fileSha: localStorage.getItem('sgm_file_sha') || null,
       deferredPrompt: null
     };
 
     // ==========================================
-    // 2. WEB CRYPTO ENGINE (AES-GCM 256-BIT)
+    // 2. CRYPTO ENGINE (AES-GCM 256-BIT)
     // ==========================================
     const CryptoEngine = {
       async deriveKey(passphrase, salt) {
@@ -369,8 +385,7 @@
       },
 
       generateId(prefix = 'SGM') {
-        const rand = Math.floor(1000 + Math.random() * 9000);
-        return `${prefix}-${rand}`;
+        return `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
       },
 
       generateKey(len = 24) {
@@ -381,7 +396,7 @@
     };
 
     // ==========================================
-    // 3. GITHUB API LIVE SYNC (READ/WRITE)
+    // 3. GITHUB API LIVE SYNC
     // ==========================================
     const GitHubSync = {
       async pullRemoteData(targetRepo = null) {
@@ -389,30 +404,52 @@
         const path = APP_STATE.config.path || 'data.json';
         const token = APP_STATE.config.token;
 
-        if (!repo) throw new Error("GitHub repository is not configured.");
+        if (!repo) throw new Error("GitHub repo configured nahi hai!");
 
-        // If no token (patient mode), fetch directly from raw or API
-        const url = `https://api.github.com/repos/${repo}/contents/${path}`;
-        const headers = { 'Accept': 'application/vnd.github.v3+json' };
-        if (token) headers['Authorization'] = `token ${token}`;
+        if (token) {
+          const url = `https://api.github.com/repos/${repo}/contents/${path}`;
+          const res = await fetch(url, {
+            headers: {
+              'Authorization': `token ${token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            },
+            cache: 'no-store'
+          });
 
-        let res = await fetch(url, { headers, cache: 'no-store' });
-
-        if (!res.ok) {
-          // Fallback to raw.githubusercontent.com for patient link without token
-          const rawUrl = `https://raw.githubusercontent.com/${repo}/main/${path}`;
-          const rawRes = await fetch(rawUrl, { cache: 'no-store' });
-          if (rawRes.ok) {
-            const rawJson = await rawRes.json();
-            return { sha: null, data: rawJson };
+          if (res.status === 404) {
+            return { sha: null, data: { patients: {}, keyRegistry: null } };
           }
-          if (res.status === 404) return { sha: null, data: { patients: {} } };
-          throw new Error(`Cloud Error: ${res.statusText}`);
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(`GitHub Error: ${err.message || res.statusText}`);
+          }
+
+          const json = await res.json();
+          const content = decodeURIComponent(escape(atob(json.content)));
+          return { sha: json.sha, data: JSON.parse(content) };
         }
 
-        const json = await res.json();
-        const content = decodeURIComponent(escape(atob(json.content)));
-        return { sha: json.sha, data: JSON.parse(content) };
+        const rawUrls = [
+          `https://raw.githubusercontent.com/${repo}/main/${path}`,
+          `https://raw.githubusercontent.com/${repo}/master/${path}`,
+          `https://api.github.com/repos/${repo}/contents/${path}`
+        ];
+
+        for (let u of rawUrls) {
+          try {
+            const r = await fetch(u, { cache: 'no-store' });
+            if (r.ok) {
+              const resData = await r.json();
+              if (resData.content) {
+                const dec = decodeURIComponent(escape(atob(resData.content)));
+                return { sha: resData.sha, data: JSON.parse(dec) };
+              }
+              return { sha: null, data: resData };
+            }
+          } catch (e) {}
+        }
+
+        throw new Error("Could not fetch remote data file from GitHub repository.");
       },
 
       async pushRemoteData(dataPayload) {
@@ -439,7 +476,7 @@
 
         if (!res.ok) {
           const err = await res.json();
-          throw new Error(err.message || 'Failed to push to GitHub');
+          throw new Error(`GitHub Save Failed: ${err.message || res.statusText}`);
         }
 
         const resJson = await res.json();
@@ -449,15 +486,137 @@
     };
 
     // ==========================================
-    // 4. ROUTER & CONTROLLER
+    // 4. EXCEL EXPORT & BACKUP / RESTORE ENGINES
+    // ==========================================
+    function exportToExcel() {
+      const patients = Object.values(APP_STATE.patients);
+      if (patients.length === 0) {
+        return alert("Export karne ke liye koi patient record uplabdh nahi hai!");
+      }
+
+      // Headers for detailed spreadsheet
+      const headers = [
+        "Patient ID", "Patient Name", "Phone", "Doctor", "Conditions", "Allergies",
+        "Medicine Name", "Subah (Morning)", "Dupahar (Afternoon)", "Shaam (Evening)", "Raat (Night)",
+        "Meal Relation", "Current Stock (Tabs)", "Per Day Consumption", "Days Left", "Status", "Remarks"
+      ];
+
+      const rows = [];
+      rows.push(headers.join(","));
+
+      patients.forEach(p => {
+        const meds = p.medicines || [];
+        if (meds.length === 0) {
+          rows.push([
+            `"${p.id}"`, `"${p.name}"`, `"${p.phone}"`, `"${p.doctor || ''}"`, `"${p.conditions || ''}"`, `"${p.allergies || ''}"`,
+            `"No medicines logged"`, "", "", "", "", "", "", "", "", "", ""
+          ].join(","));
+        } else {
+          meds.forEach(m => {
+            const perDay = calculateTotalPerDay(m);
+            const daysLeft = perDay > 0 ? Math.floor(m.qty / perDay) : 0;
+            const mealText = m.meal === 'before' ? 'Khaane Se Pehle' : (m.meal === 'with' ? 'Khaate Waqt' : 'Khaane Ke Baad');
+            const status = m.discontinued ? 'DISCONTINUED' : 'ACTIVE';
+
+            rows.push([
+              `"${p.id}"`,
+              `"${p.name}"`,
+              `"${p.phone}"`,
+              `"${p.doctor || ''}"`,
+              `"${p.conditions || ''}"`,
+              `"${p.allergies || ''}"`,
+              `"${m.name}"`,
+              `"${m.morn ? m.mornQty || 1 : 0}"`,
+              `"${m.noon ? m.noonQty || 1 : 0}"`,
+              `"${m.eve ? m.eveQty || 1 : 0}"`,
+              `"${m.night ? m.nightQty || 0.5 : 0}"`,
+              `"${mealText}"`,
+              `"${m.qty}"`,
+              `"${perDay}"`,
+              `"${daysLeft}"`,
+              `"${status}"`,
+              `"${(m.instructions || '').replace(/"/g, '""')}"`
+            ].join(","));
+          });
+        }
+      });
+
+      const csvContent = "\uFEFF" + rows.join("\r\n"); // UTF-8 BOM for Excel Hindi/English support
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `SGM_Patients_Medication_Register_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Excel sheet downloaded successfully!");
+    }
+
+    function downloadJsonBackup() {
+      const backupPackage = {
+        app: "SGM_Rx_Timeline",
+        exportedAt: new Date().toISOString(),
+        patients: APP_STATE.patients,
+        patientKeys: APP_STATE.patientKeys
+      };
+
+      const blob = new Blob([JSON.stringify(backupPackage, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `SGM_Backup_Full_${new Date().toISOString().slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast("Backup file downloaded!");
+    }
+
+    function restoreJsonBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const json = JSON.parse(e.target.result);
+          if (!json.patients) throw new Error("Invalid backup format!");
+
+          if (confirm(`Is file me ${Object.keys(json.patients).length} patients ka record hai. Restore karein?`)) {
+            APP_STATE.patients = { ...APP_STATE.patients, ...json.patients };
+            if (json.patientKeys) {
+              APP_STATE.patientKeys = { ...APP_STATE.patientKeys, ...json.patientKeys };
+            }
+            saveLocalData();
+            renderAdminDashboard();
+            closeModal('settingsModal');
+            showToast("Backup restored locally!");
+
+            // Sync restored data to GitHub
+            if (APP_STATE.config.token && APP_STATE.config.pass) {
+              await saveToGitHubCloud();
+            }
+          }
+        } catch (err) {
+          alert("Restore Failed: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    // ==========================================
+    // 5. ROUTER & CONTROLLER
     // ==========================================
     async function router() {
       const hash = window.location.hash || '';
 
       if (hash.startsWith('#/view')) {
-        // PATIENT SECURE VIEW ROUTE
         APP_STATE.isPatientView = true;
         document.getElementById('headerEnvTag').innerText = 'Patient Pass';
+        document.getElementById('topExportBtn').style.display = 'none';
         document.getElementById('topSyncBtn').style.display = 'none';
         document.getElementById('topSettingsBtn').style.display = 'none';
 
@@ -468,12 +627,10 @@
 
         await renderPatientDirectView(patientId, patientKey, repoParam);
       } else if (hash.startsWith('#/patient/')) {
-        // ADMIN SPECIFIC PATIENT DETAIL VIEW
         APP_STATE.isPatientView = false;
         const patientId = hash.replace('#/patient/', '');
         renderAdminPatientView(patientId);
       } else {
-        // ADMIN DASHBOARD
         APP_STATE.isPatientView = false;
         renderAdminDashboard();
       }
@@ -490,15 +647,12 @@
     });
 
     // ==========================================
-    // 5. VIEW RENDERING FUNCTIONS
+    // 6. VIEW RENDERING
     // ==========================================
-
-    // ADMIN DASHBOARD WITH SMART REFILL ALERT CARD
     function renderAdminDashboard() {
       const root = document.getElementById('viewRoot');
       const patients = Object.values(APP_STATE.patients);
 
-      // Collect all medicines across patients with <= 3 days left
       const criticalRefills = [];
       patients.forEach(p => {
         (p.medicines || []).forEach(m => {
@@ -532,7 +686,7 @@
             </div>
             <div class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
               ${criticalRefills.map(r => `
-                <div class="bg-white p-3 rounded-xl border border-rose-200 flex items-center justify-between shadow-xs">
+                <div class="bg-white p-3 rounded-xl border border-rose-200 flex items-center justify-between shadow-2xs">
                   <div>
                     <div class="text-xs font-bold text-slate-800">${r.patientName} <span class="text-[10px] text-slate-400">(${r.patientId})</span></div>
                     <div class="text-[11px] font-semibold text-rose-700">${r.medName}</div>
@@ -582,8 +736,8 @@
         return `
           <div class="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-400">
             <i class="fa-solid fa-folder-open text-3xl mb-2 text-slate-300"></i>
-            <p class="text-xs">No patient profiles created yet.</p>
-            <p class="text-[11px] mt-1">Tap '+ Add Patient' or check Settings for Cloud Sync.</p>
+            <p class="text-xs font-semibold">No patient records available locally.</p>
+            <p class="text-[11px] mt-1">Tap <b>🔄 (Sync)</b> to pull from GitHub, or tap <b>+ Add Patient</b> to create one.</p>
           </div>
         `;
       }
@@ -591,7 +745,7 @@
       return patients.map(p => {
         const activeMeds = (p.medicines || []).filter(m => !m.discontinued);
         return `
-          <div onclick="navigateTo('#/patient/${p.id}')" class="bg-white border border-slate-200 hover:border-brand-500 p-4 rounded-2xl shadow-xs transition-all active:scale-[0.99] cursor-pointer">
+          <div onclick="navigateTo('#/patient/${p.id}')" class="bg-white border border-slate-200 hover:border-brand-500 p-4 rounded-2xl shadow-2xs transition-all active:scale-[0.99] cursor-pointer">
             <div class="flex items-start justify-between">
               <div>
                 <h3 class="text-sm font-bold text-slate-900">${p.name}</h3>
@@ -619,7 +773,6 @@
       }).join('');
     }
 
-    // ADMIN DETAILED PATIENT TIMELINE VIEW
     function renderAdminPatientView(patientId) {
       APP_STATE.currentPatientId = patientId;
       const p = APP_STATE.patients[patientId];
@@ -650,7 +803,6 @@
           </div>
         </div>
 
-        <!-- PATIENT PROFILE BANNER -->
         <div class="bg-gradient-to-br from-brand-700 to-teal-900 text-white p-4 rounded-2xl shadow-sm mb-4">
           <div class="flex justify-between items-start">
             <div>
@@ -675,7 +827,6 @@
           ` : ''}
         </div>
 
-        <!-- ACTIONS BAR -->
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-sm font-bold text-slate-800">Current Medications</h3>
           <button onclick="openMedModal()" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 shadow-sm">
@@ -683,31 +834,33 @@
           </button>
         </div>
 
-        <!-- MEDICATION CARDS -->
         <div class="space-y-3">
           ${renderMedicationList(p.medicines || [])}
         </div>
 
-        <!-- REVISED / STOPPED HISTORY SECTION -->
         ${renderRevisedHistorySection(p.medicines || [])}
       `;
     }
 
-    // DIRECT PATIENT VIEWER (SECURE & READ ONLY)
     async function renderPatientDirectView(patientId, accessKey, repoParam) {
       const root = document.getElementById('viewRoot');
       root.innerHTML = `
-        <div class="bg-white p-8 rounded-2xl text-center space-y-3 shadow-xs">
+        <div class="bg-white p-8 rounded-2xl text-center space-y-3 shadow-2xs">
           <i class="fa-solid fa-circle-notch fa-spin text-2xl text-brand-600"></i>
           <p class="text-xs font-semibold text-slate-600">Securely loading patient timeline...</p>
         </div>
       `;
 
       try {
+        if (!patientId || !accessKey) {
+          throw new Error("Invalid link: Missing Patient ID or Access Key.");
+        }
+
         const repo = repoParam || APP_STATE.config.repo;
         const remote = await GitHubSync.pullRemoteData(repo);
+        
         if (!remote || !remote.data || !remote.data.patients || !remote.data.patients[patientId]) {
-          throw new Error("Patient record not found on secure repository.");
+          throw new Error("Patient record not found in repository database.");
         }
 
         const cipherObj = remote.data.patients[patientId];
@@ -716,10 +869,10 @@
         const activeMeds = (patientData.medicines || []).filter(m => !m.discontinued);
 
         root.innerHTML = `
-          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs mb-4">
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs mb-4">
             <div class="flex justify-between items-center pb-2 border-b border-slate-100">
               <span class="text-[10px] font-mono font-bold bg-teal-50 text-teal-700 px-2 py-0.5 rounded-md">${patientData.id}</span>
-              <span class="text-[10px] text-slate-400">Updated: ${new Date().toLocaleDateString()}</span>
+              <span class="text-[10px] text-slate-400">Updated: ${new Date(patientData.lastUpdated || Date.now()).toLocaleDateString()}</span>
             </div>
             <h2 class="text-lg font-bold text-slate-900 mt-2">${patientData.name}</h2>
             <p class="text-xs text-slate-500">Doctor: <b>${patientData.doctor || 'General'}</b></p>
@@ -735,16 +888,17 @@
           </div>
 
           <div class="mt-6 text-center text-xs text-slate-400 space-y-1">
-            <p>Prescribed by Shree Ganesh Medicals</p>
-            <p class="text-[10px]">Kisi bhi query ya emergency ke liye store par call karein.</p>
+            <p class="font-bold text-slate-600">Shree Ganesh Medicals, Gondia</p>
+            <p class="text-[10px]">Kisi bhi query ya refill ke liye store par sampark karein.</p>
           </div>
         `;
       } catch (err) {
         root.innerHTML = `
-          <div class="bg-white p-6 rounded-2xl border border-red-200 text-center space-y-3 shadow-xs">
+          <div class="bg-white p-6 rounded-2xl border border-red-200 text-center space-y-3 shadow-2xs">
             <i class="fa-solid fa-triangle-exclamation text-3xl text-red-500"></i>
-            <h3 class="text-sm font-bold text-slate-800">Decryption Failed</h3>
-            <p class="text-xs text-slate-500">Record open nahi ho paya. Kripya naya QR code ya link check karein.</p>
+            <h3 class="text-sm font-bold text-slate-800">Decryption Failed / Record Not Found</h3>
+            <p class="text-xs text-red-600 font-medium">${err.message}</p>
+            <p class="text-[11px] text-slate-500">Kripya store se naya QR code ya link check karwayein.</p>
           </div>
         `;
       }
@@ -762,7 +916,7 @@
         const mealBadge = getMealBadge(m.meal);
 
         return `
-          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
             <div class="flex justify-between items-start">
               <div>
                 <h4 class="text-sm font-bold text-slate-900">${m.name}</h4>
@@ -781,7 +935,6 @@
               ` : ''}
             </div>
 
-            <!-- DOSAGE TIME PILLS WITH SPECIFIC QUANTITIES -->
             <div class="grid grid-cols-4 gap-1.5 mt-3 text-center">
               <div class="p-2 rounded-xl border ${m.morn ? 'bg-amber-50 border-amber-200 text-amber-900 font-bold' : 'bg-slate-50 border-slate-100 text-slate-400 opacity-60'} text-[11px]">
                 <div>🌅 Subah</div>
@@ -801,7 +954,6 @@
               </div>
             </div>
 
-            <!-- STOCK & REFILL STRIP -->
             <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
               <span class="text-slate-500 font-medium">Bachi hui: <b>${m.qty} tabs</b></span>
               <span class="font-bold px-2 py-0.5 rounded-md ${daysLeft <= 3 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-50 text-emerald-700'}">
@@ -865,7 +1017,7 @@
     }
 
     // ==========================================
-    // 6. PATIENT FORM & ACTIONS
+    // 7. PATIENT & MEDICINE CRUD
     // ==========================================
     function openPatientModal(editId = null) {
       const title = document.getElementById('patientModalTitle');
@@ -907,6 +1059,12 @@
       const isNew = !id;
       const patientId = isNew ? CryptoEngine.generateId('SGM') : id;
 
+      let key = APP_STATE.patientKeys[patientId];
+      if (!key) {
+        key = CryptoEngine.generateKey(24);
+        APP_STATE.patientKeys[patientId] = key;
+      }
+
       const patientData = {
         id: patientId,
         name: document.getElementById('pFormName').value.trim(),
@@ -914,7 +1072,7 @@
         doctor: document.getElementById('pFormDoctor').value.trim(),
         conditions: document.getElementById('pFormDiag').value.trim(),
         allergies: document.getElementById('pFormAllergies').value.trim(),
-        accessKey: isNew ? CryptoEngine.generateKey(24) : (APP_STATE.patients[patientId].accessKey || CryptoEngine.generateKey(24)),
+        accessKey: key,
         medicines: isNew ? [] : (APP_STATE.patients[patientId].medicines || []),
         lastUpdated: Date.now()
       };
@@ -926,15 +1084,11 @@
       showToast(isNew ? 'Patient profile created!' : 'Patient details updated!');
       renderAdminDashboard();
 
-      // Background push to Cloud
       if (APP_STATE.config.token && APP_STATE.config.pass) {
         saveToGitHubCloud();
       }
     }
 
-    // ==========================================
-    // 7. MEDICINE FORM & LOGIC (WITH DOCTOR REVISION TOGGLE)
-    // ==========================================
     function openMedModal() {
       document.getElementById('medModalTitle').innerHTML = '<i class="fa-solid fa-pills text-brand-600"></i> Add Medicine';
       document.getElementById('medEditIndex').value = '-1';
@@ -952,11 +1106,10 @@
       document.getElementById('mTotalQty').value = '30';
       document.getElementById('mInstructions').value = '';
 
-      // Reset Doctor Revision elements
       document.getElementById('isDoctorRevised').checked = false;
       document.getElementById('reviseReasonWrap').classList.add('hidden');
       document.getElementById('mChangeReason').value = '';
-      document.getElementById('reviseContainer').classList.add('hidden'); // Only show in edit mode
+      document.getElementById('reviseContainer').classList.add('hidden');
 
       openModal('medModal');
     }
@@ -989,7 +1142,6 @@
       document.getElementById('mTotalQty').value = m.qty;
       document.getElementById('mInstructions').value = m.instructions || '';
 
-      // Show Revision Button specifically during Edit
       document.getElementById('reviseContainer').classList.remove('hidden');
       document.getElementById('isDoctorRevised').checked = false;
       document.getElementById('reviseReasonWrap').classList.add('hidden');
@@ -1046,8 +1198,6 @@
 
       if (editIdx > -1) {
         const oldMed = p.medicines[editIdx];
-
-        // ONLY ARCHIVE / REVISE IF THE SPECIFIC BUTTON WAS CHECKED
         if (isRevisedChecked) {
           medData.history = oldMed.history || [];
           medData.history.unshift({
@@ -1055,10 +1205,8 @@
             reason: `${revisionReason} (Previous: ${oldMed.name}, Qty: ${oldMed.qty})`
           });
         } else {
-          // Keep existing history intact without creating duplicate revised log
           medData.history = oldMed.history || [];
         }
-
         p.medicines[editIdx] = medData;
         showToast(isRevisedChecked ? 'Medicine marked as Doctor Revised!' : 'Medicine updated!');
       } else {
@@ -1066,6 +1214,7 @@
         showToast('Medicine added to prescription!');
       }
 
+      p.lastUpdated = Date.now();
       saveLocalData();
       closeModal('medModal');
       renderAdminPatientView(p.id);
@@ -1087,6 +1236,7 @@
         reason: `Dawai Band Ki Gayi: ${reason}`
       });
 
+      p.lastUpdated = Date.now();
       saveLocalData();
       renderAdminPatientView(p.id);
       showToast('Medicine moved to stopped history');
@@ -1097,16 +1247,16 @@
     }
 
     // ==========================================
-    // 8. PATIENT DIGITAL PASS & SHARING
+    // 8. PATIENT PASS & QR
     // ==========================================
     function openShareModal(patientId) {
       const p = APP_STATE.patients[patientId];
       const canvas = document.getElementById('qrcodeCanvas');
       canvas.innerHTML = '';
 
-      // Direct URL with Repo fallback parameter for zero-config patient access
+      const accessKey = p.accessKey || APP_STATE.patientKeys[patientId];
       const baseAppUrl = window.location.href.split('#')[0];
-      const shareUrl = `${baseAppUrl}#/view?id=${p.id}&k=${p.accessKey}&repo=${encodeURIComponent(APP_STATE.config.repo)}`;
+      const shareUrl = `${baseAppUrl}#/view?id=${p.id}&k=${accessKey}&repo=${encodeURIComponent(APP_STATE.config.repo)}`;
 
       new QRCode(canvas, {
         text: shareUrl,
@@ -1133,7 +1283,7 @@
     }
 
     // ==========================================
-    // 9. LIVE SYNC ENGINE (TWO-WAY AES-GCM GITHUB)
+    // 9. DUAL ENCRYPTED CLOUD SYNC
     // ==========================================
     async function manualSync(silent = false) {
       const spinner = document.getElementById('syncSpinner');
@@ -1146,27 +1296,46 @@
           return;
         }
         if (!pass) {
-          if (!silent) alert("Please enter your Master Passphrase in settings to decrypt data.");
+          if (!silent) alert("Settings me Master Passphrase enter karein!");
           return;
         }
 
         const remote = await GitHubSync.pullRemoteData();
-        if (remote && remote.data && remote.data.patients) {
-          for (let id in remote.data.patients) {
+        if (remote && remote.data) {
+          const cloudPatients = remote.data.patients || {};
+          const cloudKeyReg = remote.data.keyRegistry;
+
+          if (cloudKeyReg) {
             try {
-              const cipherPayload = remote.data.patients[id];
-              const decrypted = await CryptoEngine.decrypt(cipherPayload, pass);
-              APP_STATE.patients[id] = decrypted;
-            } catch (decErr) {
-              console.warn(`Could not decrypt record: ${id}`);
+              const decryptedKeys = await CryptoEngine.decrypt(cloudKeyReg, pass);
+              APP_STATE.patientKeys = { ...APP_STATE.patientKeys, ...decryptedKeys };
+            } catch (e) {
+              console.warn("Could not decrypt key registry:", e);
             }
           }
+
+          let count = 0;
+          for (let id in cloudPatients) {
+            const cipherObj = cloudPatients[id];
+            const pKey = APP_STATE.patientKeys[id];
+
+            if (pKey) {
+              try {
+                const decPatient = await CryptoEngine.decrypt(cipherObj, pKey);
+                APP_STATE.patients[id] = decPatient;
+                count++;
+              } catch (decErr) {
+                console.warn(`Could not decrypt patient ${id}`);
+              }
+            }
+          }
+
           saveLocalData();
           if (!APP_STATE.isPatientView) renderAdminDashboard();
-          if (!silent) showToast('GitHub data synced successfully!');
+          if (!silent) showToast(`Synced ${count} patient records from GitHub!`);
         }
       } catch (err) {
-        if (!silent) alert('Sync failed: ' + err.message);
+        if (!silent) alert('Sync Error: ' + err.message);
       } finally {
         spinner.classList.remove('fa-spin');
       }
@@ -1178,25 +1347,33 @@
 
       try {
         const remote = await GitHubSync.pullRemoteData();
-        const cloudJson = remote ? remote.data : { patients: {} };
+        const cloudJson = remote ? remote.data : { patients: {}, keyRegistry: null };
         if (!cloudJson.patients) cloudJson.patients = {};
 
-        // Encrypt all patients with Master Key
         for (let id in APP_STATE.patients) {
-          const encPayload = await CryptoEngine.encrypt(APP_STATE.patients[id], pass);
-          cloudJson.patients[id] = encPayload;
+          const p = APP_STATE.patients[id];
+          const pKey = p.accessKey || APP_STATE.patientKeys[id];
+          if (pKey) {
+            const encPayload = await CryptoEngine.encrypt(p, pKey);
+            cloudJson.patients[id] = encPayload;
+          }
         }
 
+        const encKeyReg = await CryptoEngine.encrypt(APP_STATE.patientKeys, pass);
+        cloudJson.keyRegistry = encKeyReg;
         cloudJson.updatedAt = Date.now();
+
         await GitHubSync.pushRemoteData(cloudJson);
         console.log("GitHub sync successful.");
       } catch (err) {
-        console.error("Auto cloud sync error:", err);
+        console.error("Cloud push failed:", err);
+        showToast("Cloud sync failed: " + err.message);
       }
     }
 
     function saveLocalData() {
       localStorage.setItem('sgm_patients', JSON.stringify(APP_STATE.patients));
+      localStorage.setItem('sgm_p_keys', JSON.stringify(APP_STATE.patientKeys));
     }
 
     function saveAndSyncSettings() {
@@ -1220,22 +1397,15 @@
     }
 
     // ==========================================
-    // 10. UI HELPERS & PWA REGISTRATION
+    // 10. UI & PWA INSTALLATION
     // ==========================================
-    function navigateTo(hash) {
-      window.location.hash = hash;
-    }
-
-    function navigateHome() {
-      if (!APP_STATE.isPatientView) navigateTo('');
-    }
-
+    function navigateTo(hash) { window.location.hash = hash; }
+    function navigateHome() { if (!APP_STATE.isPatientView) navigateTo(''); }
     function openModal(id) {
       const el = document.getElementById(id);
       el.classList.remove('hidden');
       el.classList.add('flex');
     }
-
     function closeModal(id) {
       const el = document.getElementById(id);
       el.classList.add('hidden');
@@ -1261,7 +1431,6 @@
       document.getElementById('patientListContainer').innerHTML = renderPatientCardList(filtered);
     }
 
-    // PWA Auto-Registration
     function setupPWA() {
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
@@ -1269,7 +1438,6 @@
         document.getElementById('pwaBanner').classList.remove('hidden');
       });
 
-      // Inline Service Worker Blob
       if ('serviceWorker' in navigator) {
         const swBlob = new Blob([`
           self.addEventListener('install', e => self.skipWaiting());
