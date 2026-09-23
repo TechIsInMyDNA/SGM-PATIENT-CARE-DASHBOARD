@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -494,7 +494,6 @@
         return alert("Export karne ke liye koi patient record uplabdh nahi hai!");
       }
 
-      // Headers for detailed spreadsheet
       const headers = [
         "Patient ID", "Patient Name", "Phone", "Doctor", "Conditions", "Allergies",
         "Medicine Name", "Subah (Morning)", "Dupahar (Afternoon)", "Shaam (Evening)", "Raat (Night)",
@@ -541,7 +540,7 @@
         }
       });
 
-      const csvContent = "\uFEFF" + rows.join("\r\n"); // UTF-8 BOM for Excel Hindi/English support
+      const csvContent = "\uFEFF" + rows.join("\r\n");
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -594,7 +593,6 @@
             closeModal('settingsModal');
             showToast("Backup restored locally!");
 
-            // Sync restored data to GitHub
             if (APP_STATE.config.token && APP_STATE.config.pass) {
               await saveToGitHubCloud();
             }
@@ -1283,7 +1281,7 @@
     }
 
     // ==========================================
-    // 9. DUAL ENCRYPTED CLOUD SYNC
+    // 9. DUAL BACKWARD-COMPATIBLE CLOUD SYNC
     // ==========================================
     async function manualSync(silent = false) {
       const spinner = document.getElementById('syncSpinner');
@@ -1305,28 +1303,47 @@
           const cloudPatients = remote.data.patients || {};
           const cloudKeyReg = remote.data.keyRegistry;
 
+          // 1. Decrypt Key Registry agar available ho
           if (cloudKeyReg) {
             try {
               const decryptedKeys = await CryptoEngine.decrypt(cloudKeyReg, pass);
               APP_STATE.patientKeys = { ...APP_STATE.patientKeys, ...decryptedKeys };
             } catch (e) {
-              console.warn("Could not decrypt key registry:", e);
+              console.warn("Key registry decrypt check:", e);
             }
           }
 
           let count = 0;
+
+          // 2. Decode Each Patient (Old format + New format compatible)
           for (let id in cloudPatients) {
             const cipherObj = cloudPatients[id];
-            const pKey = APP_STATE.patientKeys[id];
+            let decryptedPatient = null;
 
+            // Strategy A: Individual access key se try karo
+            const pKey = APP_STATE.patientKeys[id];
             if (pKey) {
               try {
-                const decPatient = await CryptoEngine.decrypt(cipherObj, pKey);
-                APP_STATE.patients[id] = decPatient;
-                count++;
-              } catch (decErr) {
-                console.warn(`Could not decrypt patient ${id}`);
+                decryptedPatient = await CryptoEngine.decrypt(cipherObj, pKey);
+              } catch (e) {}
+            }
+
+            // Strategy B: Agar fail hua toh purani entry hai -> Master Key se direct open karo
+            if (!decryptedPatient) {
+              try {
+                decryptedPatient = await CryptoEngine.decrypt(cipherObj, pass);
+                if (!decryptedPatient.accessKey) {
+                  decryptedPatient.accessKey = CryptoEngine.generateKey(24);
+                }
+                APP_STATE.patientKeys[id] = decryptedPatient.accessKey;
+              } catch (e) {
+                console.warn(`Record ${id} decrypt nahi ho paya.`);
               }
+            }
+
+            if (decryptedPatient) {
+              APP_STATE.patients[id] = decryptedPatient;
+              count++;
             }
           }
 
