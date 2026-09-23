@@ -2,1454 +2,1292 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>SGM Patient Care & Rx Timeline | Shree Ganesh Medicals</title>
-  <meta name="description" content="Military-Grade Encrypted Patient Prescription, Dose History & Refill Timeline Hub">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>SGM Patient Care & Rx Timeline</title>
   <meta name="theme-color" content="#0d9488">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="SGM Rx Hub">
-
-  <!-- Tailwind CSS & Font Awesome -->
+  <meta name="description" content="Shree Ganesh Medicals Patient Medication Timeline & Digital Pass">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💊</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
           colors: {
-            brand: {
-              50: '#f0fdfa',
-              100: '#ccfbf1',
-              200: '#99f6e4',
-              300: '#5eead4',
-              400: '#2dd4bf',
-              500: '#14b8a6',
-              600: '#0d9488',
-              700: '#0f766e',
-              800: '#115e59',
-              900: '#134e4a',
-            }
+            brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 700: '#0f766e', 800: '#115e59' },
+            morning: { bg: '#fef3c7', text: '#92400e', border: '#fde68a' },
+            afternoon: { bg: '#dbeafe', text: '#1e40af', border: '#bfdbfe' },
+            evening: { bg: '#ffedd5', text: '#9a3412', border: '#fed7aa' },
+            night: { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe' }
           }
         }
       }
-    };
+    }
   </script>
-
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
-    body {
-      font-family: 'Plus Jakarta Sans', sans-serif;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .font-mono-code {
-      font-family: 'JetBrains Mono', monospace;
-    }
-    .glass-nav {
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-    }
-    .custom-scroll::-webkit-scrollbar {
-      width: 4px;
-      height: 4px;
-    }
-    .custom-scroll::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 4px;
-    }
-    .spin-sync {
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .sheet-up { animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
   </style>
 </head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col font-sans pb-24">
 
-<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col pb-24 selection:bg-brand-500 selection:text-white">
-
-  <header class="sticky top-0 z-40 bg-white/95 border-b border-slate-200 glass-nav shadow-sm">
-    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center space-x-3 cursor-pointer" onclick="App.routeHome()">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-teal-400 flex items-center justify-center text-white shadow-md shadow-brand-500/20">
-          <i class="fa-solid fa-mortar-pestle text-lg"></i>
+  <!-- TOP APP BAR -->
+  <header class="bg-brand-700 text-white sticky top-0 z-40 shadow-md">
+    <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2.5 cursor-pointer" onclick="navigateHome()">
+        <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg backdrop-blur-sm shadow-inner">
+          💊
         </div>
         <div>
-          <div class="flex items-center space-x-2">
-            <h1 class="font-extrabold text-base tracking-tight text-slate-900 leading-none">SGM Rx TIMELINE</h1>
-            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-800 uppercase tracking-wider">AES-256</span>
-          </div>
-          <p class="text-[11px] text-slate-500 font-medium mt-0.5">Shree Ganesh Medicals • Patient Care Hub</p>
+          <h1 class="font-bold text-base tracking-wide flex items-center gap-1.5 leading-tight">
+            SGM Rx TIMELINE
+            <span class="text-[10px] bg-white/25 px-1.5 py-0.5 rounded font-medium" id="headerEnvTag">Admin</span>
+          </h1>
+          <p class="text-[11px] text-teal-100 font-medium">Shree Ganesh Medicals</p>
         </div>
       </div>
-
       <div class="flex items-center space-x-2">
-        <button id="syncStatusBtn" onclick="App.manualSync()" title="Click to synchronize with GitHub" class="flex items-center space-x-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
-          <i id="syncIcon" class="fa-solid fa-cloud text-brand-600"></i>
-          <span id="syncText" class="hidden sm:inline">Local Cache</span>
+        <button id="topSyncBtn" onclick="manualSync()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center transition-all text-sm" title="Sync Cloud Data">
+          <i class="fa-solid fa-rotate" id="syncSpinner"></i>
         </button>
-
-        <button id="roleBadgeBtn" onclick="App.toggleRoleMode()" class="flex items-center space-x-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-brand-600 text-white shadow-sm hover:bg-brand-700 transition">
-          <i id="roleIcon" class="fa-solid fa-user-shield text-xs"></i>
-          <span id="roleLabel">Admin</span>
+        <button id="topSettingsBtn" onclick="openModal('settingsModal')" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center transition-all text-sm" title="Settings">
+          <i class="fa-solid fa-gear"></i>
         </button>
       </div>
     </div>
   </header>
 
-  <main class="max-w-4xl mx-auto w-full px-4 pt-4 flex-1">
-
-    <!-- Toast Notification Element -->
-    <div id="toastBox" class="fixed top-16 right-4 z-50 transform translate-y-[-120%] opacity-0 transition-all duration-300 pointer-events-none">
-      <div id="toastContent" class="flex items-center space-x-3 px-4 py-3 rounded-xl shadow-xl border text-sm font-medium bg-white text-slate-800 border-slate-200">
-        <i id="toastIcon" class="fa-solid fa-circle-check text-brand-600 text-lg"></i>
-        <span id="toastMsg">Action Successful</span>
-      </div>
+  <!-- PWA INSTALL BANNER -->
+  <div id="pwaBanner" class="hidden bg-gradient-to-r from-brand-600 to-teal-800 text-white px-4 py-2.5 text-xs flex items-center justify-between shadow-sm max-w-2xl mx-auto w-full">
+    <div class="flex items-center space-x-2">
+      <i class="fa-solid fa-mobile-screen-button text-base"></i>
+      <span>Install SGM App on phone for quick access</span>
     </div>
+    <button onclick="installPWA()" class="bg-white text-brand-700 px-3 py-1 rounded-lg font-bold shadow-sm active:scale-95">INSTALL</button>
+  </div>
 
-    <!-- PWA Install Banner -->
-    <div id="pwaBanner" class="hidden mb-4 bg-gradient-to-r from-teal-500 to-brand-600 text-white p-3.5 rounded-2xl shadow-md flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-sm">
-          <i class="fa-solid fa-mobile-screen-button"></i>
-        </div>
-        <div>
-          <h4 class="text-xs font-bold">Install SGM App on Phone</h4>
-          <p class="text-[11px] text-teal-100">Add to Home Screen for lightning-fast offline access.</p>
-        </div>
-      </div>
-      <button onclick="App.installPWA()" class="px-3 py-1.5 bg-white text-brand-700 rounded-lg text-xs font-bold shadow hover:bg-teal-50 transition">Install</button>
-    </div>
+  <!-- TOAST ALERTS -->
+  <div id="toastContainer" class="fixed top-16 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
-    <section id="patientViewSection" class="hidden space-y-4">
-      <div class="bg-gradient-to-r from-brand-700 via-teal-700 to-slate-800 text-white rounded-2xl p-5 shadow-lg relative overflow-hidden">
-        <div class="absolute -right-6 -bottom-6 w-36 h-36 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
-        <div class="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <div class="flex items-center space-x-2">
-              <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-white/20 uppercase tracking-widest font-mono-code" id="pvPatientCode">SGM-0000</span>
-              <span class="text-xs text-teal-200" id="pvLastUpdated">Updated: Just now</span>
-            </div>
-            <h2 class="text-2xl font-black mt-1" id="pvPatientName">Patient Prescription</h2>
-            <p class="text-xs text-teal-100 mt-0.5" id="pvPatientMeta">Contact: -- • Doctor: --</p>
-          </div>
-
-          <div class="flex items-center space-x-2">
-            <button onclick="App.openPassQrModal()" class="px-3 py-2 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-semibold backdrop-blur-sm flex items-center space-x-2 transition">
-              <i class="fa-solid fa-qrcode text-sm"></i>
-              <span>Patient Pass</span>
-            </button>
-            <button onclick="App.sharePatientScheduleWhatsApp()" class="px-3 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold shadow flex items-center space-x-1.5 transition">
-              <i class="fa-brands fa-whatsapp text-sm"></i>
-              <span>Share Rx</span>
-            </button>
-          </div>
-        </div>
-
-        <div class="mt-4 pt-3 border-t border-white/20 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-          <div class="flex items-center space-x-2 text-rose-200">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-            <span class="font-bold">Allergies / Precautions:</span>
-            <span id="pvAllergies" class="text-white font-medium">None</span>
-          </div>
-          <div class="flex items-center space-x-2 text-teal-100">
-            <i class="fa-solid fa-stethoscope"></i>
-            <span class="font-bold">Conditions / Diagnosis:</span>
-            <span id="pvDiag" class="text-white font-medium">--</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Timeline Schedule Filter Tabs -->
-      <div class="flex items-center space-x-2 overflow-x-auto pb-1 text-xs font-semibold custom-scroll">
-        <button onclick="App.filterDoseTime('all')" class="time-tab-btn active px-3.5 py-2 rounded-xl bg-slate-900 text-white transition flex-shrink-0" data-filter="all">
-          <i class="fa-solid fa-pills mr-1.5"></i>All Active (<span id="pvCountAll">0</span>)
-        </button>
-        <button onclick="App.filterDoseTime('morning')" class="time-tab-btn px-3.5 py-2 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition flex-shrink-0" data-filter="morning">
-          <i class="fa-solid fa-sun text-amber-500 mr-1.5"></i>Subah (Morning)
-        </button>
-        <button onclick="App.filterDoseTime('afternoon')" class="time-tab-btn px-3.5 py-2 rounded-xl bg-sky-50 text-sky-900 border border-sky-200 hover:bg-sky-100 transition flex-shrink-0" data-filter="afternoon">
-          <i class="fa-solid fa-cloud-sun text-sky-500 mr-1.5"></i>Dupahar (Afternoon)
-        </button>
-        <button onclick="App.filterDoseTime('evening')" class="time-tab-btn px-3.5 py-2 rounded-xl bg-orange-50 text-orange-900 border border-orange-200 hover:bg-orange-100 transition flex-shrink-0" data-filter="evening">
-          <i class="fa-solid fa-sunset text-orange-500 mr-1.5"></i>Shaam (Evening)
-        </button>
-        <button onclick="App.filterDoseTime('night')" class="time-tab-btn px-3.5 py-2 rounded-xl bg-indigo-50 text-indigo-900 border border-indigo-200 hover:bg-indigo-100 transition flex-shrink-0" data-filter="night">
-          <i class="fa-solid fa-moon text-indigo-500 mr-1.5"></i>Raat (Night)
-        </button>
-      </div>
-
-      <!-- Active Medication Cards Container -->
-      <div id="pvMedicationList" class="space-y-3"></div>
-
-      <!-- Dosage Alteration & Discontinuation Log -->
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-        <button onclick="App.toggleAuditAccordion()" class="w-full flex items-center justify-between text-left">
-          <div class="flex items-center space-x-2.5">
-            <div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center text-xs">
-              <i class="fa-solid fa-clock-rotate-left"></i>
-            </div>
-            <div>
-              <h3 class="text-sm font-bold text-slate-800">Dose Changes & Stopped Medicines Log</h3>
-              <p class="text-[11px] text-slate-500">Full audit trail of prescriptions altered or stopped by doctor</p>
-            </div>
-          </div>
-          <i id="auditChevron" class="fa-solid fa-chevron-down text-slate-400 text-xs transition-transform duration-200"></i>
-        </button>
-        <div id="auditListContainer" class="hidden mt-4 pt-3 border-t border-slate-100 space-y-2.5"></div>
-      </div>
-
-      <!-- Pharmacy Support Notice -->
-      <div class="p-4 rounded-2xl bg-teal-50/80 border border-teal-200/70 flex items-start space-x-3 text-xs text-teal-900">
-        <i class="fa-solid fa-hand-holding-medical text-brand-600 text-base mt-0.5"></i>
-        <div>
-          <span class="font-bold">Shree Ganesh Medicals Refill Helpline:</span> Kisi bhi dawai ki samapti se pehle naya patta lene ya dose samajhne ke liye store par call ya visit karein.
-        </div>
-      </div>
-    </section>
-
-    <section id="adminViewSection" class="space-y-4">
-      <div class="bg-white rounded-2xl border border-slate-200 p-3.5 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
-        <div class="relative w-full sm:w-80">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-xs"></i>
-          <input type="text" id="adminSearchInput" oninput="App.renderAdminPatients()" placeholder="Search patient name, ID, phone..." class="w-full pl-9 pr-3 py-2 text-sm bg-slate-50 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-brand-500/30 focus:border-brand-500 transition">
-        </div>
-
-        <div class="flex items-center space-x-2 w-full sm:w-auto">
-          <button onclick="App.openPatientModal()" class="flex-1 sm:flex-none px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-600/20 flex items-center justify-center space-x-2 transition">
-            <i class="fa-solid fa-user-plus text-xs"></i>
-            <span>Naya Patient Add Karein</span>
-          </button>
-          <button onclick="App.openSettingsModal()" class="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs transition" title="GitHub Live Sync & Passphrase">
-            <i class="fa-solid fa-sliders text-sm"></i>
-          </button>
-        </div>
-      </div>
-
-      <!-- Quick Metrics Bar -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-700 flex items-center justify-center text-base">
-            <i class="fa-solid fa-hospital-user"></i>
-          </div>
-          <div>
-            <div class="text-[11px] font-semibold text-slate-400 uppercase">Total Patients</div>
-            <div class="text-xl font-black text-slate-800" id="statTotalPatients">0</div>
-          </div>
-        </div>
-
-        <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center text-base">
-            <i class="fa-solid fa-pills"></i>
-          </div>
-          <div>
-            <div class="text-[11px] font-semibold text-slate-400 uppercase">Active Medicines</div>
-            <div class="text-xl font-black text-slate-800" id="statActiveMeds">0</div>
-          </div>
-        </div>
-
-        <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center text-base">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-          </div>
-          <div>
-            <div class="text-[11px] font-semibold text-slate-400 uppercase">Refill Alerts (&le;4d)</div>
-            <div class="text-xl font-black text-rose-600" id="statRefillAlerts">0</div>
-          </div>
-        </div>
-
-        <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center text-base">
-            <i class="fa-solid fa-shield-halved"></i>
-          </div>
-          <div>
-            <div class="text-[11px] font-semibold text-slate-400 uppercase">Encryption</div>
-            <div class="text-xs font-bold text-indigo-700 truncate" id="statCryptoBadge">AES-GCM Active</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Patient Cards Grid in Admin -->
-      <div id="adminPatientList" class="space-y-3"></div>
-    </section>
-
+  <!-- MAIN VIEWPORT -->
+  <main class="max-w-2xl mx-auto w-full px-4 pt-4 flex-1">
+    <!-- VIEW CONTAINER RENDERED BY ROUTER -->
+    <div id="viewRoot"></div>
   </main>
 
-  <!-- Settings & GitHub Sync Modal -->
-  <div id="settingsModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-        <div class="flex items-center space-x-2.5">
-          <div class="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-sm">
-            <i class="fa-solid fa-sliders"></i>
-          </div>
-          <h3 class="font-bold text-slate-800 text-sm">GitHub Live Sync & Security Config</h3>
-        </div>
-        <button onclick="App.closeSettingsModal()" class="text-slate-400 hover:text-slate-600 transition">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
+  <!-- SETTINGS MODAL -->
+  <div id="settingsModal" class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 sheet-up max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-sliders text-brand-600"></i> Cloud & Security Config
+        </h2>
+        <button onclick="closeModal('settingsModal')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <div class="p-6 overflow-y-auto space-y-4 custom-scroll text-xs">
+      <div class="mt-4 space-y-4 text-sm">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">GitHub Personal Access Token (PAT):</label>
-          <input type="password" id="cfgToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono-code focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
-          <p class="text-[10px] text-slate-400 mt-1">Repo 'contents:write' permission token. Stored strictly in local browser storage.</p>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">GitHub Personal Access Token (PAT):</label>
+          <input type="password" id="cfgToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 font-mono text-xs">
+          <p class="text-[11px] text-slate-400 mt-1">Repo scope required. Stored strictly in local browser storage.</p>
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">GitHub Repository (owner/repo):</label>
-          <input type="text" id="cfgRepo" placeholder="username/sgm-rx-database" class="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono-code focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+          <label class="block text-xs font-semibold text-slate-600 mb-1">GitHub Repo Name (owner/repo):</label>
+          <input type="text" id="cfgRepo" placeholder="TechIsInMyDNA/SGM-PATIENT-CARE-DASHBOARD" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 font-mono text-xs">
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Database File Path:</label>
-          <input type="text" id="cfgPath" value="data.json" class="w-full px-3 py-2 rounded-xl border border-slate-200 font-mono-code focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+          <label class="block text-xs font-semibold text-slate-600 mb-1">File Path in Repo:</label>
+          <input type="text" id="cfgPath" value="data.json" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 font-mono text-xs">
         </div>
 
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">Master Encryption Passphrase:</label>
-          <input type="password" id="cfgPass" placeholder="Shree Ganesh Medicals Secret Passphrase" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
-          <p class="text-[10px] text-slate-400 mt-1">Used to encrypt/decrypt records via AES-GCM (PBKDF2 100k rounds) before syncing to GitHub.</p>
+        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
+          <label class="block text-xs font-bold text-amber-800 flex items-center gap-1.5">
+            <i class="fa-solid fa-shield-halved"></i> Master AES-GCM Encryption Key:
+          </label>
+          <input type="password" id="cfgPass" placeholder="Master Key to encrypt & decrypt data" class="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 font-mono text-xs bg-white">
+          <p class="text-[11px] text-amber-700">Encrypted on device. No unencrypted text is ever stored on GitHub.</p>
         </div>
       </div>
 
-      <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-100 flex items-center justify-end space-x-2">
-        <button onclick="App.closeSettingsModal()" class="px-4 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-100 text-xs">Cancel</button>
-        <button onclick="App.saveSettingsAndConnect()" class="px-4 py-2 rounded-xl bg-brand-600 text-white font-bold hover:bg-brand-700 text-xs shadow-md shadow-brand-600/20">Save & Sync</button>
+      <div class="mt-6 flex gap-2">
+        <button onclick="saveAndSyncSettings()" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl shadow-sm text-sm">Save & Live Sync</button>
+        <button onclick="closeModal('settingsModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 hover:bg-slate-50 text-sm">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- Patient Registration Modal -->
-  <div id="patientModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-        <div class="flex items-center space-x-2.5">
-          <div class="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-sm">
-            <i class="fa-solid fa-hospital-user"></i>
-          </div>
-          <h3 class="font-bold text-slate-800 text-sm" id="patientModalTitle">Register New Patient</h3>
-        </div>
-        <button onclick="App.closePatientModal()" class="text-slate-400 hover:text-slate-600 transition">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
+  <!-- PATIENT CREATE/EDIT MODAL -->
+  <div id="patientModal" class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 sheet-up max-h-[92vh] overflow-y-auto shadow-2xl">
+      <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+        <h2 id="patientModalTitle" class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-user-plus text-brand-600"></i> New Patient Profile
+        </h2>
+        <button onclick="closeModal('patientModal')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <form id="patientForm" onsubmit="App.handleSavePatient(event)" class="p-6 overflow-y-auto space-y-3.5 custom-scroll text-xs">
-        <input type="hidden" id="pfEditId" value="">
-
+      <form onsubmit="handlePatientFormSubmit(event)" class="mt-4 space-y-3.5 text-sm">
+        <input type="hidden" id="pFormId">
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Patient Full Name *</label>
-          <input type="text" id="pfName" required placeholder="e.g. Ramesh Agrawal" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Patient Name *</label>
+          <input type="text" id="pFormName" required placeholder="e.g. Ramesh Agrawal" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500">
         </div>
 
         <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Mobile (WhatsApp) *</label>
-            <input type="tel" id="pfPhone" required placeholder="98XXXXXXXX" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Phone Number (10 digits) *</label>
+            <input type="tel" id="pFormPhone" required pattern="[0-9]{10}" placeholder="98XXXXXXXX" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500">
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Age & Gender</label>
-            <input type="text" id="pfAgeGender" placeholder="e.g. 54 / M" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Consulting Doctor</label>
+            <input type="text" id="pFormDoctor" placeholder="e.g. Dr. Verma" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500">
           </div>
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Consulting Doctor / Clinic</label>
-          <input type="text" id="pfDoctor" placeholder="e.g. Dr. Verma (Cardiologist)" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Medical Conditions / Diagnosis</label>
+          <input type="text" id="pFormDiag" placeholder="e.g. Hypertension, Type 2 Diabetes" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500">
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Diagnosis / Conditions</label>
-          <input type="text" id="pfDiag" placeholder="e.g. Hypertension, Type 2 Diabetes" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Known Allergies / Critical Alerts</label>
+          <input type="text" id="pFormAllergies" placeholder="e.g. Sulfa drugs, Penicillin allergy" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 bg-red-50/50">
         </div>
 
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">Known Allergies / Precaution Notes</label>
-          <textarea id="pfNotes" rows="2" placeholder="e.g. Allergic to Sulfa drugs. Take with milk." class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none"></textarea>
-        </div>
-
-        <div class="pt-2 flex items-center justify-end space-x-2">
-          <button type="button" onclick="App.closePatientModal()" class="px-4 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-100">Cancel</button>
-          <button type="submit" class="px-5 py-2 rounded-xl bg-brand-600 text-white font-bold hover:bg-brand-700 shadow-md shadow-brand-600/20">Save Patient</button>
+        <div class="pt-3 flex gap-2">
+          <button type="submit" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-sm">Save Patient Record</button>
+          <button type="button" onclick="closeModal('patientModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 hover:bg-slate-50 text-sm">Cancel</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Medicine Schedule Form Modal -->
-  <div id="medModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
-      <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-        <div class="flex items-center space-x-2.5">
-          <div class="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center text-sm">
-            <i class="fa-solid fa-capsules"></i>
-          </div>
-          <h3 class="font-bold text-slate-800 text-sm" id="medModalTitle">Add Medicine to Timeline</h3>
-        </div>
-        <button onclick="App.closeMedModal()" class="text-slate-400 hover:text-slate-600 transition">
-          <i class="fa-solid fa-xmark text-lg"></i>
-        </button>
+  <!-- MEDICINE CREATE/EDIT MODAL -->
+  <div id="medModal" class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 sheet-up max-h-[92vh] overflow-y-auto shadow-2xl">
+      <div class="flex justify-between items-center pb-4 border-b border-slate-100">
+        <h2 id="medModalTitle" class="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <i class="fa-solid fa-pills text-brand-600"></i> Add Medicine
+        </h2>
+        <button onclick="closeModal('medModal')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <form id="medForm" onsubmit="App.handleSaveMed(event)" class="p-6 overflow-y-auto space-y-3.5 custom-scroll text-xs">
-        <input type="hidden" id="mfPatientId" value="">
-        <input type="hidden" id="mfMedIndex" value="-1">
+      <form onsubmit="handleMedicineFormSubmit(event)" class="mt-4 space-y-4 text-sm">
+        <input type="hidden" id="medEditIndex" value="-1">
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Medicine Name & Strength *</label>
-          <input type="text" id="mfName" required placeholder="e.g. Telmisartan 40mg or Glycomet GP 1" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Medicine Name & Strength *</label>
+          <input type="text" id="mName" required placeholder="e.g. Telmisartan 40mg / Glycomet GP 1" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 font-medium">
         </div>
 
+        <!-- DOSE SCHEDULE SELECTION WITH QUANTITIES -->
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Slot Quantities (Kitni Matra Kis Time Leni Hai)</label>
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <div class="p-2 border border-slate-200 rounded-xl bg-amber-50/50">
-              <label class="block text-[10px] font-bold text-amber-900 mb-1">🌅 Subah Qty</label>
-              <input type="number" id="mfMornQty" step="0.25" min="0" value="0" class="w-full px-2 py-1 text-xs rounded-lg border border-amber-200 bg-white focus:outline-none focus:ring-1 focus:ring-amber-400">
+          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Dose Schedule & Tablet Quantity Per Time:</label>
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div class="p-2.5 rounded-xl border border-amber-200 bg-amber-50/60">
+              <label class="flex items-center gap-2 font-bold text-amber-900 cursor-pointer">
+                <input type="checkbox" id="mornCheck" onchange="toggleDoseQtyInput('morn')" class="rounded text-amber-600">
+                <span>🌅 Subah (Morning)</span>
+              </label>
+              <div id="mornQtyWrap" class="hidden mt-2">
+                <input type="number" id="mornQty" step="0.25" min="0.25" value="1" placeholder="Dose (1, 0.5)" class="w-full bg-white border border-amber-300 rounded px-2 py-1 text-xs font-bold text-amber-900">
+              </div>
             </div>
-            <div class="p-2 border border-slate-200 rounded-xl bg-sky-50/50">
-              <label class="block text-[10px] font-bold text-sky-900 mb-1">☀️ Dupahar Qty</label>
-              <input type="number" id="mfNoonQty" step="0.25" min="0" value="0" class="w-full px-2 py-1 text-xs rounded-lg border border-sky-200 bg-white focus:outline-none focus:ring-1 focus:ring-sky-400">
+
+            <div class="p-2.5 rounded-xl border border-blue-200 bg-blue-50/60">
+              <label class="flex items-center gap-2 font-bold text-blue-900 cursor-pointer">
+                <input type="checkbox" id="noonCheck" onchange="toggleDoseQtyInput('noon')" class="rounded text-blue-600">
+                <span>☀️ Dupahar (Afternoon)</span>
+              </label>
+              <div id="noonQtyWrap" class="hidden mt-2">
+                <input type="number" id="noonQty" step="0.25" min="0.25" value="1" placeholder="Dose (1, 0.5)" class="w-full bg-white border border-blue-300 rounded px-2 py-1 text-xs font-bold text-blue-900">
+              </div>
             </div>
-            <div class="p-2 border border-slate-200 rounded-xl bg-orange-50/50">
-              <label class="block text-[10px] font-bold text-orange-900 mb-1">🌇 Shaam Qty</label>
-              <input type="number" id="mfEveQty" step="0.25" min="0" value="0" class="w-full px-2 py-1 text-xs rounded-lg border border-orange-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-400">
+
+            <div class="p-2.5 rounded-xl border border-orange-200 bg-orange-50/60">
+              <label class="flex items-center gap-2 font-bold text-orange-900 cursor-pointer">
+                <input type="checkbox" id="eveCheck" onchange="toggleDoseQtyInput('eve')" class="rounded text-orange-600">
+                <span>🌇 Shaam (Evening)</span>
+              </label>
+              <div id="eveQtyWrap" class="hidden mt-2">
+                <input type="number" id="eveQty" step="0.25" min="0.25" value="1" placeholder="Dose (1, 0.5)" class="w-full bg-white border border-orange-300 rounded px-2 py-1 text-xs font-bold text-orange-900">
+              </div>
             </div>
-            <div class="p-2 border border-slate-200 rounded-xl bg-indigo-50/50">
-              <label class="block text-[10px] font-bold text-indigo-900 mb-1">🌙 Raat Qty</label>
-              <input type="number" id="mfNightQty" step="0.25" min="0" value="0" class="w-full px-2 py-1 text-xs rounded-lg border border-indigo-200 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400">
+
+            <div class="p-2.5 rounded-xl border border-indigo-200 bg-indigo-50/60">
+              <label class="flex items-center gap-2 font-bold text-indigo-900 cursor-pointer">
+                <input type="checkbox" id="nightCheck" onchange="toggleDoseQtyInput('night')" class="rounded text-indigo-600">
+                <span>🌙 Raat (Night)</span>
+              </label>
+              <div id="nightQtyWrap" class="hidden mt-2">
+                <input type="number" id="nightQty" step="0.25" min="0.25" value="0.5" placeholder="Dose (1, 0.5)" class="w-full bg-white border border-indigo-300 rounded px-2 py-1 text-xs font-bold text-indigo-900">
+              </div>
             </div>
           </div>
-          <p class="text-[10px] text-slate-400 mt-1">Total per day is automatically calculated from these slot quantities.</p>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-3">
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Khaane Ka Niyam (Meal Relation)</label>
-            <select id="mfMeal" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
-              <option value="after">Khaane Ke Baad (After Meal)</option>
-              <option value="before">Khaane Se Pehle (Empty Stomach)</option>
-              <option value="with">Khaane Ke Saath (With Food)</option>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Meal Relation</label>
+            <select id="mMeal" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 bg-white">
+              <option value="after">🍽️ Khaane Ke Baad</option>
+              <option value="before">🥣 Khaane Se Pehle (Empty Stomach)</option>
+              <option value="with">🥗 Khaate Waqt (With Meal)</option>
             </select>
           </div>
           <div>
-            <label class="block font-bold text-slate-700 mb-1">Form / Type</label>
-            <select id="mfType" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
-              <option value="Tablet">Tablet (Goli)</option>
-              <option value="Capsule">Capsule</option>
-              <option value="Syrup">Syrup</option>
-              <option value="Injection">Injection / Insulin</option>
-              <option value="Drops">Drops</option>
-              <option value="Ointment">Ointment / Cream</option>
-            </select>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Current Stock (Tabs/Qty) *</label>
+            <input type="number" id="mTotalQty" required min="0" step="1" placeholder="e.g. 30" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500">
           </div>
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Total Quantity in Strip / Stock (Tabs)</label>
-          <input type="number" id="mfQty" min="0" placeholder="e.g. 30" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Doctor's Remark / Instruction</label>
+          <input type="text" id="mInstructions" placeholder="e.g. Paani khoob piyein / BP high hone par" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500">
         </div>
 
-        <!-- Dose Alteration Notice (Shown if modifying an existing medicine) -->
-        <div id="mfReasonContainer" class="hidden">
-          <label class="block font-bold text-amber-900 mb-1">Doctor Dose Change Reason (Audit Log) *</label>
-          <input type="text" id="mfReason" placeholder="e.g. BP increased, doctor shifted from 40mg to 80mg" class="w-full px-3 py-2 rounded-xl border border-amber-300 bg-amber-50/50 focus:ring-2 focus:ring-amber-500/20 focus:outline-none">
-          <p class="text-[10px] text-amber-700 mt-1">This comment will be stamped with the current date in the patient audit history.</p>
+        <!-- SPECIFIC DOCTOR REVISION TOGGLE (ONLY REVISED WHEN THIS BUTTON IS CLICKED/CHECKED) -->
+        <div id="reviseContainer" class="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-2">
+          <label class="flex items-center space-x-2.5 cursor-pointer">
+            <input type="checkbox" id="isDoctorRevised" onchange="toggleRevisionNote(this.checked)" class="w-4 h-4 rounded text-rose-600 focus:ring-rose-500">
+            <span class="text-xs font-bold text-rose-900">
+              <i class="fa-solid fa-code-branch"></i> Mark as Doctor Revised / Changed Dose
+            </span>
+          </label>
+          <p class="text-[11px] text-rose-600 leading-tight">
+            Agar doctor ne dose badla hai toh is button ko tick karein. Tabhi purani dose revision history me jayegi. Simple typo ya quantity update ke liye ise tick na karein.
+          </p>
+          <div id="reviseReasonWrap" class="hidden pt-1">
+            <label class="block text-[11px] font-semibold text-rose-800 mb-1">Revision Reason:</label>
+            <input type="text" id="mChangeReason" placeholder="e.g. Doctor reduced dose after normal BP" class="w-full px-3 py-1.5 border border-rose-300 rounded-lg text-xs bg-white">
+          </div>
         </div>
 
-        <div class="pt-2 flex items-center justify-end space-x-2">
-          <button type="button" onclick="App.closeMedModal()" class="px-4 py-2 rounded-xl border border-slate-200 font-bold text-slate-600 hover:bg-slate-100">Cancel</button>
-          <button type="submit" class="px-5 py-2 rounded-xl bg-brand-600 text-white font-bold hover:bg-brand-700 shadow-md shadow-brand-600/20">Save Schedule</button>
+        <div class="pt-2 flex gap-2">
+          <button type="submit" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-sm">Save Medicine</button>
+          <button type="button" onclick="closeModal('medModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 hover:bg-slate-50 text-sm">Cancel</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- Patient Pass QR Code Modal -->
-  <div id="qrModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col p-6 items-center text-center">
-      <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-700 flex items-center justify-center text-xl mb-2">
-        <i class="fa-solid fa-qrcode"></i>
+  <!-- PATIENT PASS / QR SHARING MODAL -->
+  <div id="shareModal" class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center shadow-2xl">
+      <h3 class="text-base font-bold text-slate-800 flex items-center justify-center gap-1.5 mb-1">
+        <i class="fa-solid fa-qrcode text-brand-600"></i> Patient Digital Pass
+      </h3>
+      <p class="text-xs text-slate-500 mb-4">Scan QR ya link WhatsApp par share karein. Zero login required for patient.</p>
+
+      <div class="bg-white p-3 rounded-xl border border-slate-200 inline-block shadow-sm">
+        <div id="qrcodeCanvas"></div>
       </div>
-      <h3 class="font-extrabold text-slate-800 text-base" id="qrPatientName">Patient Pass</h3>
-      <p class="text-xs text-slate-500 mt-0.5">Instant Zero-Token Rx View</p>
 
-      <div class="my-5 p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-center" id="qrCanvasBox"></div>
-
-      <p class="text-[11px] text-slate-400 mb-4 px-2">Scan with camera to load this prescription schedule on mobile.</p>
-
-      <div class="w-full flex space-x-2">
-        <button onclick="App.copyPatientLink()" class="flex-1 px-3 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold text-xs hover:bg-slate-200 transition">
-          <i class="fa-regular fa-copy mr-1"></i>Copy Link
+      <div class="mt-4 flex flex-col gap-2">
+        <button id="modalWaBtn" class="w-full bg-[#25D366] hover:bg-[#20ba5a] text-white py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm">
+          <i class="fa-brands fa-whatsapp text-base"></i> Send Digital Pass on WhatsApp
         </button>
-        <button onclick="App.closePassQrModal()" class="flex-1 px-3 py-2 rounded-xl bg-brand-600 text-white font-bold text-xs hover:bg-brand-700 transition">
-          Done
+        <button onclick="copyShareUrl()" class="w-full border border-slate-300 py-2 rounded-xl font-medium text-xs text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-1.5">
+          <i class="fa-regular fa-copy"></i> Copy Patient View Link
         </button>
+        <button onclick="closeModal('shareModal')" class="text-xs text-slate-400 font-semibold py-1">Close</button>
       </div>
     </div>
   </div>
 
   <script>
+    // ==========================================
+    // 1. APPLICATION STATE & STORAGE ENGINE
+    // ==========================================
+    const DEFAULT_CONFIG = {
+      token: '',
+      repo: 'TechIsInMyDNA/SGM-PATIENT-CARE-DASHBOARD',
+      path: 'data.json',
+      pass: ''
+    };
+
+    let APP_STATE = {
+      config: { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem('sgm_cfg') || '{}') },
+      patients: JSON.parse(localStorage.getItem('sgm_patients') || '{}'),
+      currentPatientId: null,
+      isPatientView: false,
+      activeFilter: 'all',
+      fileSha: localStorage.getItem('sgm_file_sha') || null,
+      deferredPrompt: null
+    };
+
+    // ==========================================
+    // 2. WEB CRYPTO ENGINE (AES-GCM 256-BIT)
+    // ==========================================
     const CryptoEngine = {
       async deriveKey(passphrase, salt) {
         const enc = new TextEncoder();
-        const baseKey = await crypto.subtle.importKey(
-          "raw",
-          enc.encode(passphrase),
-          "PBKDF2",
-          false,
-          ["deriveKey"]
+        const keyMaterial = await crypto.subtle.importKey(
+          'raw', enc.encode(passphrase), 'PBKDF2', false, ['deriveKey']
         );
         return await crypto.subtle.deriveKey(
-          {
-            name: "PBKDF2",
-            salt: salt,
-            iterations: 100000,
-            hash: "SHA-256"
-          },
-          baseKey,
-          { name: "AES-GCM", length: 256 },
+          { name: 'PBKDF2', salt: salt, iterations: 100000, hash: 'SHA-256' },
+          keyMaterial,
+          { name: 'AES-GCM', length: 256 },
           false,
-          ["encrypt", "decrypt"]
+          ['encrypt', 'decrypt']
         );
       },
 
-      async encryptObject(plainObj, passphrase) {
+      async encrypt(plainObject, passphrase) {
         const salt = crypto.getRandomValues(new Uint8Array(16));
         const iv = crypto.getRandomValues(new Uint8Array(12));
         const key = await this.deriveKey(passphrase, salt);
-        const encoded = new TextEncoder().encode(JSON.stringify(plainObj));
+        const encoded = new TextEncoder().encode(JSON.stringify(plainObject));
 
-        const cipherBuffer = await crypto.subtle.encrypt(
-          { name: "AES-GCM", iv },
-          key,
-          encoded
-        );
+        const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded);
 
         return {
-          salt: btoa(String.fromCharCode(...salt)),
-          iv: btoa(String.fromCharCode(...iv)),
-          data: btoa(String.fromCharCode(...new Uint8Array(cipherBuffer)))
+          s: btoa(String.fromCharCode(...salt)),
+          i: btoa(String.fromCharCode(...iv)),
+          d: btoa(String.fromCharCode(...new Uint8Array(cipher)))
         };
       },
 
-      async decryptObject(cipherPayload, passphrase) {
-        const salt = Uint8Array.from(atob(cipherPayload.salt), c => c.charCodeAt(0));
-        const iv = Uint8Array.from(atob(cipherPayload.iv), c => c.charCodeAt(0));
-        const cipherData = Uint8Array.from(atob(cipherPayload.data), c => c.charCodeAt(0));
-
+      async decrypt(cipherPackage, passphrase) {
+        if (!cipherPackage || !cipherPackage.s || !cipherPackage.i || !cipherPackage.d) {
+          throw new Error("Invalid cipher package format");
+        }
+        const salt = Uint8Array.from(atob(cipherPackage.s), c => c.charCodeAt(0));
+        const iv = Uint8Array.from(atob(cipherPackage.i), c => c.charCodeAt(0));
+        const cipher = Uint8Array.from(atob(cipherPackage.d), c => c.charCodeAt(0));
         const key = await this.deriveKey(passphrase, salt);
-        const decryptedBuffer = await crypto.subtle.decrypt(
-          { name: "AES-GCM", iv },
-          key,
-          cipherData
-        );
 
-        const decoded = new TextDecoder().decode(decryptedBuffer);
-        return JSON.parse(decoded);
+        const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher);
+        return JSON.parse(new TextDecoder().decode(decrypted));
       },
 
-      generateAccessKey(length = 20) {
-        const charset = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
-        const randomValues = crypto.getRandomValues(new Uint8Array(length));
-        return Array.from(randomValues).map(n => charset[n % charset.length]).join('');
+      generateId(prefix = 'SGM') {
+        const rand = Math.floor(1000 + Math.random() * 9000);
+        return `${prefix}-${rand}`;
+      },
+
+      generateKey(len = 24) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        return Array.from(crypto.getRandomValues(new Uint8Array(len)))
+          .map(b => chars[b % chars.length]).join('');
       }
     };
 
+    // ==========================================
+    // 3. GITHUB API LIVE SYNC (READ/WRITE)
+    // ==========================================
     const GitHubSync = {
-      async pullRemoteDatabase(cfg) {
-        if (!cfg.repo || !cfg.path) return null;
-        const url = `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}`;
-        const headers = cfg.token ? { 'Authorization': `Bearer ${cfg.token}` } : {};
+      async pullRemoteData(targetRepo = null) {
+        const repo = targetRepo || APP_STATE.config.repo;
+        const path = APP_STATE.config.path || 'data.json';
+        const token = APP_STATE.config.token;
 
-        const response = await fetch(url, { headers });
-        if (response.status === 404) {
-          return { sha: null, payload: { version: 1, last_sync: Date.now(), records: {} } };
-        }
-        if (!response.ok) {
-          throw new Error(`GitHub Sync Error (${response.status}): ${response.statusText}`);
+        if (!repo) throw new Error("GitHub repository is not configured.");
+
+        // If no token (patient mode), fetch directly from raw or API
+        const url = `https://api.github.com/repos/${repo}/contents/${path}`;
+        const headers = { 'Accept': 'application/vnd.github.v3+json' };
+        if (token) headers['Authorization'] = `token ${token}`;
+
+        let res = await fetch(url, { headers, cache: 'no-store' });
+
+        if (!res.ok) {
+          // Fallback to raw.githubusercontent.com for patient link without token
+          const rawUrl = `https://raw.githubusercontent.com/${repo}/main/${path}`;
+          const rawRes = await fetch(rawUrl, { cache: 'no-store' });
+          if (rawRes.ok) {
+            const rawJson = await rawRes.json();
+            return { sha: null, data: rawJson };
+          }
+          if (res.status === 404) return { sha: null, data: { patients: {} } };
+          throw new Error(`Cloud Error: ${res.statusText}`);
         }
 
-        const json = await response.json();
-        const contentStr = decodeURIComponent(escape(atob(json.content)));
-        return {
-          sha: json.sha,
-          payload: JSON.parse(contentStr)
-        };
+        const json = await res.json();
+        const content = decodeURIComponent(escape(atob(json.content)));
+        return { sha: json.sha, data: JSON.parse(content) };
       },
 
-      async pushRemoteDatabase(cfg, dataPayload, lastSha) {
-        if (!cfg.token || !cfg.repo || !cfg.path) {
-          throw new Error("GitHub PAT and repository details are required to push updates.");
-        }
-        const url = `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}`;
-        const encodedContent = btoa(unescape(encodeURIComponent(JSON.stringify(dataPayload, null, 2))));
+      async pushRemoteData(dataPayload) {
+        const { repo, path, token } = APP_STATE.config;
+        if (!token || !repo) throw new Error("GitHub token and repo are required to write data.");
 
-        const requestBody = {
-          message: `SGM Rx Update: ${new Date().toISOString()}`,
-          content: encodedContent
+        const url = `https://api.github.com/repos/${repo}/contents/${path}`;
+        const utf8Content = btoa(unescape(encodeURIComponent(JSON.stringify(dataPayload, null, 2))));
+
+        const bodyData = {
+          message: `SGM Live Cloud Update: ${new Date().toISOString()}`,
+          content: utf8Content
         };
-        if (lastSha) requestBody.sha = lastSha;
+        if (APP_STATE.fileSha) bodyData.sha = APP_STATE.fileSha;
 
-        const response = await fetch(url, {
+        const res = await fetch(url, {
           method: 'PUT',
           headers: {
-            'Authorization': `Bearer ${cfg.token}`,
+            'Authorization': `token ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify(requestBody)
+          body: JSON.stringify(bodyData)
         });
 
-        if (!response.ok) {
-          throw new Error(`Commit failed (${response.status}). Potential conflict or permissions issue.`);
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.message || 'Failed to push to GitHub');
         }
-        const resJson = await response.json();
-        return resJson.content.sha;
+
+        const resJson = await res.json();
+        APP_STATE.fileSha = resJson.content.sha;
+        localStorage.setItem('sgm_file_sha', APP_STATE.fileSha);
       }
     };
 
-    const App = {
-      state: {
-        config: {
-          token: '',
-          repo: '',
-          path: 'data.json',
-          pass: ''
-        },
-        patients: {}, // in-memory decrypted store: { [id]: patientObj }
-        currentSha: null,
-        activeFilter: 'all',
-        mode: 'admin', // 'admin' | 'patient'
-        currentViewPatientId: null,
-        deferredPrompt: null
-      },
+    // ==========================================
+    // 4. ROUTER & CONTROLLER
+    // ==========================================
+    async function router() {
+      const hash = window.location.hash || '';
 
-      init() {
-        this.loadLocalConfig();
-        this.setupPWA();
-        this.checkRouting();
-        window.addEventListener('hashchange', () => this.checkRouting());
-      },
+      if (hash.startsWith('#/view')) {
+        // PATIENT SECURE VIEW ROUTE
+        APP_STATE.isPatientView = true;
+        document.getElementById('headerEnvTag').innerText = 'Patient Pass';
+        document.getElementById('topSyncBtn').style.display = 'none';
+        document.getElementById('topSettingsBtn').style.display = 'none';
 
-      loadLocalConfig() {
-        const stored = localStorage.getItem('sgm_config');
-        if (stored) {
-          try {
-            this.state.config = { ...this.state.config, ...JSON.parse(stored) };
-          } catch(e) {}
-        }
-        const cachedPatients = localStorage.getItem('sgm_patients_cache');
-        if (cachedPatients) {
-          try {
-            this.state.patients = JSON.parse(cachedPatients);
-          } catch(e) {}
-        }
-      },
+        const params = new URLSearchParams(hash.split('?')[1]);
+        const patientId = params.get('id');
+        const patientKey = params.get('k');
+        const repoParam = params.get('repo');
 
-      saveLocalConfig() {
-        localStorage.setItem('sgm_config', JSON.stringify(this.state.config));
-        localStorage.setItem('sgm_patients_cache', JSON.stringify(this.state.patients));
-      },
+        await renderPatientDirectView(patientId, patientKey, repoParam);
+      } else if (hash.startsWith('#/patient/')) {
+        // ADMIN SPECIFIC PATIENT DETAIL VIEW
+        APP_STATE.isPatientView = false;
+        const patientId = hash.replace('#/patient/', '');
+        renderAdminPatientView(patientId);
+      } else {
+        // ADMIN DASHBOARD
+        APP_STATE.isPatientView = false;
+        renderAdminDashboard();
+      }
+    }
 
-      async checkRouting() {
-        const hash = window.location.hash;
-        if (hash.startsWith('#/view')) {
-          // Patient Zero-Token Viewer
-          const query = hash.split('?')[1] || '';
-          const params = new URLSearchParams(query);
-          const pid = params.get('id');
-          const pkey = params.get('key');
+    window.addEventListener('hashchange', router);
+    window.addEventListener('DOMContentLoaded', async () => {
+      populateSettingsForm();
+      setupPWA();
+      await router();
+      if (!APP_STATE.isPatientView && APP_STATE.config.token && APP_STATE.config.pass) {
+        manualSync(true);
+      }
+    });
 
-          if (pid && pkey) {
-            await this.activatePatientMode(pid, pkey);
-            return;
-          }
-        }
-        // Fallback or Admin Home
-        this.activateAdminMode();
-      },
+    // ==========================================
+    // 5. VIEW RENDERING FUNCTIONS
+    // ==========================================
 
-      activateAdminMode() {
-        this.state.mode = 'admin';
-        document.getElementById('patientViewSection').classList.add('hidden');
-        document.getElementById('adminViewSection').classList.remove('hidden');
-        document.getElementById('roleLabel').innerText = 'Admin';
-        document.getElementById('roleIcon').className = 'fa-solid fa-user-shield text-xs';
-        document.getElementById('syncStatusBtn').classList.remove('hidden');
+    // ADMIN DASHBOARD WITH SMART REFILL ALERT CARD
+    function renderAdminDashboard() {
+      const root = document.getElementById('viewRoot');
+      const patients = Object.values(APP_STATE.patients);
 
-        this.renderAdminPatients();
-        this.updateAdminMetrics();
-
-        if (this.state.config.token && this.state.config.repo) {
-          this.manualSync(false);
-        }
-      },
-
-      async activatePatientMode(pid, pkey) {
-        this.state.mode = 'patient';
-        this.state.currentViewPatientId = pid;
-        document.getElementById('adminViewSection').classList.add('hidden');
-        document.getElementById('patientViewSection').classList.remove('hidden');
-        document.getElementById('roleLabel').innerText = 'Patient Pass';
-        document.getElementById('roleIcon').className = 'fa-solid fa-eye text-xs';
-
-        // Check if we have remote data to fetch
-        this.showToast('Loading verified prescription...', 'info');
-        try {
-          const cfg = this.state.config;
-          let patientRecord = this.state.patients[pid];
-
-          if (!patientRecord && cfg.repo) {
-            const rawUrl = `https://raw.githubusercontent.com/${cfg.repo}/main/${cfg.path}?t=${Date.now()}`;
-            const res = await fetch(rawUrl);
-            if (res.ok) {
-              const remoteJson = await res.json();
-              if (remoteJson.records && remoteJson.records[pid]) {
-                const decrypted = await CryptoEngine.decryptObject(remoteJson.records[pid], pkey);
-                patientRecord = decrypted;
-                this.state.patients[pid] = decrypted;
-              }
+      // Collect all medicines across patients with <= 3 days left
+      const criticalRefills = [];
+      patients.forEach(p => {
+        (p.medicines || []).forEach(m => {
+          if (!m.discontinued) {
+            const perDay = calculateTotalPerDay(m);
+            const daysLeft = perDay > 0 ? Math.floor(m.qty / perDay) : 999;
+            if (daysLeft <= 3) {
+              criticalRefills.push({
+                patientId: p.id,
+                patientName: p.name,
+                patientPhone: p.phone,
+                medName: m.name,
+                qty: m.qty,
+                daysLeft: daysLeft
+              });
             }
           }
-
-          if (patientRecord) {
-            this.renderPatientView(patientRecord);
-          } else {
-            this.showToast('Patient record not found or key invalid', 'error');
-          }
-        } catch (e) {
-          console.error(e);
-          this.showToast('Could not load record: ' + e.message, 'error');
-        }
-      },
-
-      routeHome() {
-        window.location.hash = '';
-        this.activateAdminMode();
-      },
-
-      toggleRoleMode() {
-        if (this.state.mode === 'admin') {
-          const patientIds = Object.keys(this.state.patients);
-          if (patientIds.length === 0) {
-            this.showToast('No patient records to preview', 'info');
-            return;
-          }
-          const p = this.state.patients[patientIds[0]];
-          window.location.hash = `#/view?id=${p.id}&key=${p.patientKey}`;
-        } else {
-          this.routeHome();
-        }
-      },
-
-      renderPatientView(p) {
-        document.getElementById('pvPatientCode').innerText = p.id;
-        document.getElementById('pvPatientName').innerText = p.name;
-        document.getElementById('pvPatientMeta').innerText = `Age/Gender: ${p.ageGender || 'N/A'} • Contact: ${p.phone} • Doctor: ${p.doctor || 'General'}`;
-        document.getElementById('pvLastUpdated').innerText = `Updated: ${new Date(p.updatedAt || Date.now()).toLocaleDateString()}`;
-        document.getElementById('pvAllergies').innerText = p.notes || 'No known allergies reported';
-        document.getElementById('pvDiag').innerText = p.diag || 'Routine Care';
-
-        const meds = p.medicines || [];
-        const activeMeds = meds.filter(m => !m.discontinued);
-        document.getElementById('pvCountAll').innerText = activeMeds.length;
-
-        this.renderPatientFilteredMeds(activeMeds);
-        this.renderPatientAuditLogs(meds);
-      },
-
-      filterDoseTime(filterName) {
-        this.state.activeFilter = filterName;
-        document.querySelectorAll('.time-tab-btn').forEach(btn => {
-          if (btn.dataset.filter === filterName) {
-            btn.classList.add('bg-slate-900', 'text-white');
-            btn.classList.remove('bg-amber-50', 'bg-sky-50', 'bg-orange-50', 'bg-indigo-50');
-          } else {
-            btn.classList.remove('bg-slate-900', 'text-white');
-          }
         });
+      });
 
-        const p = this.state.patients[this.state.currentViewPatientId];
-        if (p) {
-          const activeMeds = (p.medicines || []).filter(m => !m.discontinued);
-          this.renderPatientFilteredMeds(activeMeds);
-        }
-      },
-
-      renderPatientFilteredMeds(meds) {
-        const container = document.getElementById('pvMedicationList');
-        const filter = this.state.activeFilter;
-
-        const filtered = meds.filter(m => {
-          const mq = m.mornQty !== undefined ? m.mornQty : (m.morn ? 1 : 0);
-          const nq = m.noonQty !== undefined ? m.noonQty : (m.noon ? 1 : 0);
-          const eq = m.eveQty !== undefined ? m.eveQty : (m.eve ? 1 : 0);
-          const nq_night = m.nightQty !== undefined ? m.nightQty : (m.night ? 1 : 0);
-
-          if (filter === 'morning') return mq > 0;
-          if (filter === 'afternoon') return nq > 0;
-          if (filter === 'evening') return eq > 0;
-          if (filter === 'night') return nq_night > 0;
-          return true;
-        });
-
-        if (filtered.length === 0) {
-          container.innerHTML = `
-            <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-400">
-              <i class="fa-solid fa-prescription-bottle text-3xl mb-2 text-slate-300"></i>
-              <p class="text-xs font-semibold">Is samay ke liye koi dawai nirdharit nahi hai.</p>
+      let refillHtml = '';
+      if (criticalRefills.length > 0) {
+        refillHtml = `
+          <div class="mb-5 bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 shadow-sm">
+            <div class="flex items-center justify-between pb-2 border-b border-rose-200 mb-3">
+              <h3 class="text-xs font-bold text-rose-900 uppercase tracking-wide flex items-center gap-1.5">
+                <i class="fa-solid fa-triangle-exclamation text-rose-600 animate-pulse text-sm"></i> 
+                Refill Due Alerts (≤ 3 Days Left)
+              </h3>
+              <span class="text-[11px] font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded-full">${criticalRefills.length} Due</span>
             </div>
-          `;
-          return;
-        }
-
-        container.innerHTML = filtered.map((m, idx) => {
-          const mq = m.mornQty !== undefined ? m.mornQty : (m.morn ? 1 : 0);
-          const nq = m.noonQty !== undefined ? m.noonQty : (m.noon ? 1 : 0);
-          const eq = m.eveQty !== undefined ? m.eveQty : (m.eve ? 1 : 0);
-          const nq_night = m.nightQty !== undefined ? m.nightQty : (m.night ? 1 : 0);
-
-          const perDay = m.perDay || (mq + nq + eq + nq_night);
-          const daysLeft = Math.max(0, Math.floor((m.stockQty || 0) / perDay));
-          const isLow = daysLeft <= 4;
-
-          const mealLabel = m.meal === 'before'
-            ? '🍽️ Khaane Se Pehle (Empty Stomach)'
-            : (m.meal === 'with' ? '🍽️ Khaane Ke Saath' : '🍽️ Khaane Ke Baad');
-
-          return `
-            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:shadow-md transition">
-              <div class="flex items-start justify-between">
-                <div>
-                  <div class="flex items-center space-x-2">
-                    <span class="text-xs font-bold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-md">${m.type || 'Tablet'}</span>
-                    <h3 class="text-base font-extrabold text-slate-900">${m.name}</h3>
+            <div class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
+              ${criticalRefills.map(r => `
+                <div class="bg-white p-3 rounded-xl border border-rose-200 flex items-center justify-between shadow-xs">
+                  <div>
+                    <div class="text-xs font-bold text-slate-800">${r.patientName} <span class="text-[10px] text-slate-400">(${r.patientId})</span></div>
+                    <div class="text-[11px] font-semibold text-rose-700">${r.medName}</div>
+                    <div class="text-[10px] text-slate-500 font-medium">Bachi hui: <b>${r.qty} tabs</b> (~${r.daysLeft} din baaki)</div>
                   </div>
-                  <div class="text-xs font-semibold text-slate-500 mt-1">${mealLabel}</div>
-                </div>
-
-                <div class="text-right">
-                  <div class="inline-flex items-center px-2 py-1 rounded-lg text-xs font-bold ${isLow ? 'bg-rose-50 text-rose-700 border border-rose-200' : 'bg-slate-100 text-slate-700'}">
-                    <i class="fa-solid ${isLow ? 'fa-triangle-exclamation' : 'fa-box-open'} mr-1.5"></i>
-                    ${m.stockQty || 0} tabs (${daysLeft}d left)
+                  <div class="flex items-center gap-1.5">
+                    <a href="tel:${r.patientPhone}" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-xs" title="Call Patient">
+                      <i class="fa-solid fa-phone"></i>
+                    </a>
+                    <a href="https://wa.me/91${r.patientPhone}?text=${encodeURIComponent(`Namaste ${r.patientName} ji,\nShree Ganesh Medicals se reminder:\nAapki dawai *${r.medName}* sirf *${r.daysLeft} din* ki bachi hai (${r.qty} tabs baaki).\nKripya regular dose ke liye samay par refill kara lein.`)}" target="_blank" class="w-8 h-8 rounded-lg bg-[#25D366] hover:bg-[#20ba5a] text-white flex items-center justify-center text-xs" title="WhatsApp Reminder">
+                      <i class="fa-brands fa-whatsapp text-sm"></i>
+                    </a>
                   </div>
                 </div>
-              </div>
-
-              <!-- Dose Time Quantities Badges -->
-              <div class="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-slate-100">
-                ${mq > 0 ? `<span class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold flex items-center"><i class="fa-solid fa-sun text-amber-500 mr-1.5"></i>Subah: ${mq}</span>` : ''}
-                ${nq > 0 ? `<span class="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-900 border border-sky-200 text-xs font-bold flex items-center"><i class="fa-solid fa-cloud-sun text-sky-500 mr-1.5"></i>Dupahar: ${nq}</span>` : ''}
-                ${eq > 0 ? `<span class="px-2.5 py-1 rounded-lg bg-orange-50 text-orange-900 border border-orange-200 text-xs font-bold flex items-center"><i class="fa-solid fa-sunset text-orange-500 mr-1.5"></i>Shaam: ${eq}</span>` : ''}
-                ${nq_night > 0 ? `<span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-900 border border-indigo-200 text-xs font-bold flex items-center"><i class="fa-solid fa-moon text-indigo-500 mr-1.5"></i>Raat: ${nq_night}</span>` : ''}
-              </div>
+              `).join('')}
             </div>
-          `;
-        }).join('');
-      },
-
-      renderPatientAuditLogs(meds) {
-        const container = document.getElementById('auditListContainer');
-        const auditEntries = [];
-
-        meds.forEach(m => {
-          if (m.history && m.history.length > 0) {
-            m.history.forEach(h => {
-              auditEntries.push({ medName: m.name, ...h });
-            });
-          }
-          if (m.discontinued) {
-            auditEntries.push({
-              medName: m.name,
-              date: m.discontinuedDate || 'Past Record',
-              reason: m.discontinuedReason || 'Discontinued by Doctor'
-            });
-          }
-        });
-
-        if (auditEntries.length === 0) {
-          container.innerHTML = '<p class="text-xs text-slate-400">No revisions or alterations on record.</p>';
-          return;
-        }
-
-        container.innerHTML = auditEntries.map(e => `
-          <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs space-y-1">
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-slate-800">${e.medName}</span>
-              <span class="text-[10px] text-slate-400 font-mono-code">${e.date}</span>
-            </div>
-            <p class="text-slate-600">${e.reason || e.note || 'Dosage altered by physician'}</p>
           </div>
-        `).join('');
-      },
+        `;
+      }
 
-      toggleAuditAccordion() {
-        const container = document.getElementById('auditListContainer');
-        const chevron = document.getElementById('auditChevron');
-        container.classList.toggle('hidden');
-        chevron.style.transform = container.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
-      },
+      root.innerHTML = `
+        ${refillHtml}
 
-      renderAdminPatients() {
-        const container = document.getElementById('adminPatientList');
-        const query = (document.getElementById('adminSearchInput').value || '').toLowerCase().trim();
-        const patients = Object.values(this.state.patients);
+        <div class="flex items-center justify-between mb-4">
+          <div>
+            <h2 class="text-base font-bold text-slate-800">Patients Record</h2>
+            <p class="text-xs text-slate-500">${patients.length} Active Profiles</p>
+          </div>
+          <button onclick="openPatientModal()" class="bg-brand-600 hover:bg-brand-700 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm">
+            <i class="fa-solid fa-user-plus"></i> Add Patient
+          </button>
+        </div>
 
-        const filtered = patients.filter(p => {
-          return (p.name || '').toLowerCase().includes(query) ||
-                 (p.id || '').toLowerCase().includes(query) ||
-                 (p.phone || '').includes(query) ||
-                 (p.doctor || '').toLowerCase().includes(query);
-        });
+        <div class="relative mb-4">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
+          <input type="text" oninput="filterPatients(this.value)" placeholder="Search patient by name, phone or condition..." class="w-full bg-white pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-500">
+        </div>
 
-        if (filtered.length === 0) {
-          container.innerHTML = `
-            <div class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-400">
-              <i class="fa-solid fa-users text-4xl mb-3 text-slate-300"></i>
-              <h3 class="text-sm font-bold text-slate-600">No Patient Records Found</h3>
-              <p class="text-xs text-slate-400 mt-1">Naya patient add karein ya search filter badlein.</p>
+        <div id="patientListContainer" class="space-y-3">
+          ${renderPatientCardList(patients)}
+        </div>
+      `;
+    }
+
+    function renderPatientCardList(patients) {
+      if (patients.length === 0) {
+        return `
+          <div class="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-400">
+            <i class="fa-solid fa-folder-open text-3xl mb-2 text-slate-300"></i>
+            <p class="text-xs">No patient profiles created yet.</p>
+            <p class="text-[11px] mt-1">Tap '+ Add Patient' or check Settings for Cloud Sync.</p>
+          </div>
+        `;
+      }
+
+      return patients.map(p => {
+        const activeMeds = (p.medicines || []).filter(m => !m.discontinued);
+        return `
+          <div onclick="navigateTo('#/patient/${p.id}')" class="bg-white border border-slate-200 hover:border-brand-500 p-4 rounded-2xl shadow-xs transition-all active:scale-[0.99] cursor-pointer">
+            <div class="flex items-start justify-between">
+              <div>
+                <h3 class="text-sm font-bold text-slate-900">${p.name}</h3>
+                <p class="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
+                  <span><i class="fa-solid fa-phone text-[10px]"></i> ${p.phone}</span>
+                  <span>•</span>
+                  <span><i class="fa-solid fa-user-doctor text-[10px]"></i> ${p.doctor || 'General'}</span>
+                </p>
+              </div>
+              <span class="text-[10px] font-mono font-bold bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-lg">${p.id}</span>
             </div>
-          `;
-          return;
+
+            ${p.conditions ? `<div class="mt-2 text-[11px] text-slate-600 bg-slate-50 px-2.5 py-1 rounded-md inline-block">🩺 ${p.conditions}</div>` : ''}
+
+            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="font-semibold text-slate-700 flex items-center gap-1.5">
+                <i class="fa-solid fa-capsules text-brand-600"></i> ${activeMeds.length} Active Doses
+              </span>
+              <span class="text-brand-600 font-bold text-[11px] flex items-center gap-1">
+                View Timeline <i class="fa-solid fa-chevron-right text-[9px]"></i>
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ADMIN DETAILED PATIENT TIMELINE VIEW
+    function renderAdminPatientView(patientId) {
+      APP_STATE.currentPatientId = patientId;
+      const p = APP_STATE.patients[patientId];
+      const root = document.getElementById('viewRoot');
+
+      if (!p) {
+        root.innerHTML = `
+          <div class="bg-white p-6 rounded-2xl text-center">
+            <p class="text-sm text-red-500 font-bold">Patient Not Found!</p>
+            <button onclick="navigateTo('')" class="mt-3 text-xs bg-slate-800 text-white px-4 py-2 rounded-xl">Back</button>
+          </div>
+        `;
+        return;
+      }
+
+      root.innerHTML = `
+        <div class="mb-4 flex items-center justify-between">
+          <button onclick="navigateTo('')" class="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1">
+            <i class="fa-solid fa-arrow-left"></i> All Patients
+          </button>
+          <div class="flex items-center gap-2">
+            <button onclick="openShareModal('${p.id}')" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm">
+              <i class="fa-solid fa-share-nodes"></i> Patient Pass
+            </button>
+            <button onclick="editPatientProfile('${p.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-1.5 rounded-xl">
+              <i class="fa-solid fa-pen"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- PATIENT PROFILE BANNER -->
+        <div class="bg-gradient-to-br from-brand-700 to-teal-900 text-white p-4 rounded-2xl shadow-sm mb-4">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="text-[10px] font-mono bg-white/20 px-2 py-0.5 rounded-md font-semibold tracking-wider">${p.id}</span>
+              <h2 class="text-lg font-bold mt-1 leading-snug">${p.name}</h2>
+              <p class="text-xs text-teal-100 flex items-center gap-2 mt-0.5">
+                <span>📞 ${p.phone}</span>
+                <span>•</span>
+                <span>🩺 ${p.doctor || 'Self / General'}</span>
+              </p>
+            </div>
+            <a href="tel:${p.phone}" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-phone"></i>
+            </a>
+          </div>
+
+          ${p.allergies ? `
+            <div class="mt-3 bg-red-500/25 border border-red-300/40 rounded-xl p-2.5 text-xs text-red-100 flex items-center gap-2">
+              <i class="fa-solid fa-triangle-exclamation text-red-300"></i>
+              <span><b>Allergy Alert:</b> ${p.allergies}</span>
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- ACTIONS BAR -->
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-sm font-bold text-slate-800">Current Medications</h3>
+          <button onclick="openMedModal()" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 shadow-sm">
+            <i class="fa-solid fa-plus"></i> Add Medicine
+          </button>
+        </div>
+
+        <!-- MEDICATION CARDS -->
+        <div class="space-y-3">
+          ${renderMedicationList(p.medicines || [])}
+        </div>
+
+        <!-- REVISED / STOPPED HISTORY SECTION -->
+        ${renderRevisedHistorySection(p.medicines || [])}
+      `;
+    }
+
+    // DIRECT PATIENT VIEWER (SECURE & READ ONLY)
+    async function renderPatientDirectView(patientId, accessKey, repoParam) {
+      const root = document.getElementById('viewRoot');
+      root.innerHTML = `
+        <div class="bg-white p-8 rounded-2xl text-center space-y-3 shadow-xs">
+          <i class="fa-solid fa-circle-notch fa-spin text-2xl text-brand-600"></i>
+          <p class="text-xs font-semibold text-slate-600">Securely loading patient timeline...</p>
+        </div>
+      `;
+
+      try {
+        const repo = repoParam || APP_STATE.config.repo;
+        const remote = await GitHubSync.pullRemoteData(repo);
+        if (!remote || !remote.data || !remote.data.patients || !remote.data.patients[patientId]) {
+          throw new Error("Patient record not found on secure repository.");
         }
 
-        container.innerHTML = filtered.map(p => {
-          const activeCount = (p.medicines || []).filter(m => !m.discontinued).length;
-          const shareUrl = this.getShareUrl(p);
+        const cipherObj = remote.data.patients[patientId];
+        const patientData = await CryptoEngine.decrypt(cipherObj, accessKey);
 
-          return `
-            <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm hover:border-brand-500/40 transition">
-              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <div class="flex items-center space-x-2">
-                    <span class="text-[11px] font-bold font-mono-code px-2 py-0.5 rounded bg-brand-50 text-brand-700">${p.id}</span>
-                    <h3 class="text-base font-extrabold text-slate-900">${p.name}</h3>
-                  </div>
-                  <p class="text-xs text-slate-500 mt-0.5">📞 ${p.phone} • 🩺 ${p.doctor || 'General'} • 💊 ${activeCount} Active Rx</p>
-                </div>
+        const activeMeds = (patientData.medicines || []).filter(m => !m.discontinued);
 
-                <div class="flex items-center flex-wrap gap-1.5">
-                  <button onclick="App.openMedModal('${p.id}')" class="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 text-teal-800 font-bold text-xs flex items-center transition">
-                    <i class="fa-solid fa-plus mr-1"></i>Add Med
-                  </button>
-                  <button onclick="App.viewPatientAsPass('${p.id}')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center transition">
-                    <i class="fa-solid fa-eye mr-1"></i>View
-                  </button>
-                  <button onclick="App.openPassQrModalForPatient('${p.id}')" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs transition" title="Patient QR Pass">
-                    <i class="fa-solid fa-qrcode"></i>
-                  </button>
-                  <a href="https://wa.me/91${p.phone}?text=${encodeURIComponent(`Namaste ${p.name} ji, Shree Ganesh Medicals se aapka digital prescription schedule timeline taiyar hai. Dekhne ke liye click karein: ${shareUrl}`)}" target="_blank" class="p-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs transition" title="Send WhatsApp">
-                    <i class="fa-brands fa-whatsapp text-sm"></i>
-                  </a>
-                  <button onclick="App.openPatientModal('${p.id}')" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs transition" title="Edit Patient Details">
-                    <i class="fa-solid fa-pen-to-square"></i>
-                  </button>
+        root.innerHTML = `
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs mb-4">
+            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+              <span class="text-[10px] font-mono font-bold bg-teal-50 text-teal-700 px-2 py-0.5 rounded-md">${patientData.id}</span>
+              <span class="text-[10px] text-slate-400">Updated: ${new Date().toLocaleDateString()}</span>
+            </div>
+            <h2 class="text-lg font-bold text-slate-900 mt-2">${patientData.name}</h2>
+            <p class="text-xs text-slate-500">Doctor: <b>${patientData.doctor || 'General'}</b></p>
+            ${patientData.allergies ? `<div class="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded-lg font-medium">⚠️ Allergy: ${patientData.allergies}</div>` : ''}
+          </div>
+
+          <div class="mb-3">
+            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide">Aapki Active Dawaiyan (${activeMeds.length})</h3>
+          </div>
+
+          <div class="space-y-3">
+            ${renderMedicationList(patientData.medicines || [], true)}
+          </div>
+
+          <div class="mt-6 text-center text-xs text-slate-400 space-y-1">
+            <p>Prescribed by Shree Ganesh Medicals</p>
+            <p class="text-[10px]">Kisi bhi query ya emergency ke liye store par call karein.</p>
+          </div>
+        `;
+      } catch (err) {
+        root.innerHTML = `
+          <div class="bg-white p-6 rounded-2xl border border-red-200 text-center space-y-3 shadow-xs">
+            <i class="fa-solid fa-triangle-exclamation text-3xl text-red-500"></i>
+            <h3 class="text-sm font-bold text-slate-800">Decryption Failed</h3>
+            <p class="text-xs text-slate-500">Record open nahi ho paya. Kripya naya QR code ya link check karein.</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderMedicationList(meds, isReadOnly = false) {
+      const activeMeds = meds.filter(m => !m.discontinued);
+      if (activeMeds.length === 0) {
+        return `<div class="bg-white border rounded-2xl p-6 text-center text-xs text-slate-400">No active medicines logged.</div>`;
+      }
+
+      return activeMeds.map((m, idx) => {
+        const perDay = calculateTotalPerDay(m);
+        const daysLeft = perDay > 0 ? Math.floor(m.qty / perDay) : 999;
+        const mealBadge = getMealBadge(m.meal);
+
+        return `
+          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+            <div class="flex justify-between items-start">
+              <div>
+                <h4 class="text-sm font-bold text-slate-900">${m.name}</h4>
+                <div class="mt-1 flex flex-wrap gap-1.5 items-center">
+                  ${mealBadge}
+                  <span class="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
+                    Total: ${perDay} tab/day
+                  </span>
                 </div>
               </div>
-
-              <!-- Compact Pills Strip in Admin Card -->
-              ${(p.medicines && p.medicines.length > 0) ? `
-                <div class="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-2">
-                  ${p.medicines.map((m, mIdx) => `
-                    <div class="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs border ${m.discontinued ? 'bg-slate-50 text-slate-400 border-slate-200' : 'bg-slate-50 text-slate-800 border-slate-200'}">
-                      <span class="font-bold">${m.name}</span>
-                      ${!m.discontinued ? `
-                        <button onclick="App.openEditMedModal('${p.id}', ${mIdx})" class="text-brand-600 hover:text-brand-800 ml-1">
-                          <i class="fa-solid fa-pencil text-[10px]"></i>
-                        </button>
-                        <button onclick="App.discontinueMedicine('${p.id}', ${mIdx})" class="text-rose-500 hover:text-rose-700 ml-1" title="Mark Discontinued">
-                          <i class="fa-solid fa-ban text-[10px]"></i>
-                        </button>
-                      ` : '<span class="text-[10px] text-rose-500">(Stopped)</span>'}
-                    </div>
-                  `).join('')}
+              ${!isReadOnly ? `
+                <div class="flex items-center gap-1">
+                  <button onclick="editMedicine(${idx})" class="text-brand-600 hover:text-brand-700 text-xs font-bold px-2 py-1 bg-brand-50 rounded-lg">Edit</button>
+                  <button onclick="stopMedicine(${idx})" class="text-rose-600 hover:text-rose-700 text-xs font-bold px-2 py-1 bg-rose-50 rounded-lg">Stop</button>
                 </div>
               ` : ''}
             </div>
-          `;
-        }).join('');
-      },
 
-      updateAdminMetrics() {
-        const patients = Object.values(this.state.patients);
-        document.getElementById('statTotalPatients').innerText = patients.length;
+            <!-- DOSAGE TIME PILLS WITH SPECIFIC QUANTITIES -->
+            <div class="grid grid-cols-4 gap-1.5 mt-3 text-center">
+              <div class="p-2 rounded-xl border ${m.morn ? 'bg-amber-50 border-amber-200 text-amber-900 font-bold' : 'bg-slate-50 border-slate-100 text-slate-400 opacity-60'} text-[11px]">
+                <div>🌅 Subah</div>
+                <div class="text-xs font-extrabold mt-0.5">${m.morn ? `${m.mornQty || 1} tab` : '-'}</div>
+              </div>
+              <div class="p-2 rounded-xl border ${m.noon ? 'bg-blue-50 border-blue-200 text-blue-900 font-bold' : 'bg-slate-50 border-slate-100 text-slate-400 opacity-60'} text-[11px]">
+                <div>☀️ Dupahar</div>
+                <div class="text-xs font-extrabold mt-0.5">${m.noon ? `${m.noonQty || 1} tab` : '-'}</div>
+              </div>
+              <div class="p-2 rounded-xl border ${m.eve ? 'bg-orange-50 border-orange-200 text-orange-900 font-bold' : 'bg-slate-50 border-slate-100 text-slate-400 opacity-60'} text-[11px]">
+                <div>🌇 Shaam</div>
+                <div class="text-xs font-extrabold mt-0.5">${m.eve ? `${m.eveQty || 1} tab` : '-'}</div>
+              </div>
+              <div class="p-2 rounded-xl border ${m.night ? 'bg-indigo-50 border-indigo-200 text-indigo-900 font-bold' : 'bg-slate-50 border-slate-100 text-slate-400 opacity-60'} text-[11px]">
+                <div>🌙 Raat</div>
+                <div class="text-xs font-extrabold mt-0.5">${m.night ? `${m.nightQty || 0.5} tab` : '-'}</div>
+              </div>
+            </div>
 
-        let totalMeds = 0;
-        let refillAlerts = 0;
+            <!-- STOCK & REFILL STRIP -->
+            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="text-slate-500 font-medium">Bachi hui: <b>${m.qty} tabs</b></span>
+              <span class="font-bold px-2 py-0.5 rounded-md ${daysLeft <= 3 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-50 text-emerald-700'}">
+                ${daysLeft <= 3 ? `🚨 Refill in ${daysLeft} din` : `✅ ~${daysLeft} din ka dose`}
+              </span>
+            </div>
 
-        patients.forEach(p => {
-          (p.medicines || []).forEach(m => {
-            if (!m.discontinued) {
-              totalMeds++;
-              const mq = m.mornQty !== undefined ? m.mornQty : (m.morn ? 1 : 0);
-              const nq = m.noonQty !== undefined ? m.noonQty : (m.noon ? 1 : 0);
-              const eq = m.eveQty !== undefined ? m.eveQty : (m.eve ? 1 : 0);
-              const nq_night = m.nightQty !== undefined ? m.nightQty : (m.night ? 1 : 0);
-              const perDay = m.perDay || (mq + nq + eq + nq_night) || 1;
-              const days = Math.floor((m.stockQty || 0) / perDay);
-              if (days <= 4) refillAlerts++;
-            }
-          });
-        });
+            ${m.instructions ? `
+              <div class="mt-2 text-[11px] text-slate-600 bg-slate-50 p-2 rounded-lg">
+                💡 <b>Note:</b> ${m.instructions}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
 
-        document.getElementById('statActiveMeds').innerText = totalMeds;
-        document.getElementById('statRefillAlerts').innerText = refillAlerts;
-      },
+    function renderRevisedHistorySection(meds) {
+      const revisedMeds = meds.filter(m => m.discontinued || (m.history && m.history.length > 0));
+      if (revisedMeds.length === 0) return '';
 
-      viewPatientAsPass(pid) {
-        const p = this.state.patients[pid];
-        if (!p) return;
-        window.location.hash = `#/view?id=${p.id}&key=${p.patientKey}`;
-      },
+      return `
+        <div class="mt-6 pt-4 border-t border-slate-200">
+          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+            <i class="fa-solid fa-clock-rotate-left"></i> Doctor Revised & Stopped Prescriptions
+          </h3>
+          <div class="space-y-2">
+            ${revisedMeds.map(m => `
+              <div class="bg-slate-100 border border-slate-200 rounded-xl p-3 text-xs">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-slate-700 ${m.discontinued ? 'line-through text-slate-400' : ''}">${m.name}</span>${m.discontinued ? '<span class="text-[10px] font-bold bg-rose-200 text-rose-800 px-2 py-0.5 rounded">Stopped</span>' : '<span class="text-[10px] font-bold bg-amber-200 text-amber-800 px-2 py-0.5 rounded">Revised</span>'}
+                </div>
+                ${(m.history || []).map(h => `
+                  <div class="mt-1 text-[11px] text-slate-600 border-l-2 border-slate-300 pl-2">
+                    <b>${h.date}:</b> ${h.reason}
+                  </div>
+                `).join('')}
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
 
-      getShareUrl(p) {
-        const base = window.location.origin + window.location.pathname;
-        return `${base}#/view?id=${p.id}&key=${p.patientKey}`;
-      },
+    function calculateTotalPerDay(m) {
+      let sum = 0;
+      if (m.morn) sum += parseFloat(m.mornQty || 1);
+      if (m.noon) sum += parseFloat(m.noonQty || 1);
+      if (m.eve) sum += parseFloat(m.eveQty || 1);
+      if (m.night) sum += parseFloat(m.nightQty || 0.5);
+      return sum > 0 ? sum : 1;
+    }
 
-      openPatientModal(editId = '') {
-        const modal = document.getElementById('patientModal');
-        const form = document.getElementById('patientForm');
-        form.reset();
-        document.getElementById('pfEditId').value = editId;
+    function getMealBadge(mealType) {
+      if (mealType === 'before') {
+        return `<span class="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">🥣 Khaane Se Pehle</span>`;
+      } else if (mealType === 'with') {
+        return `<span class="text-[10px] font-bold bg-purple-100 text-purple-800 px-2 py-0.5 rounded-md">🥗 Khaate Waqt</span>`;
+      }
+      return `<span class="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md">🍽️ Khaane Ke Baad</span>`;
+    }
 
-        if (editId && this.state.patients[editId]) {
-          const p = this.state.patients[editId];
-          document.getElementById('patientModalTitle').innerText = 'Edit Patient Details';
-          document.getElementById('pfName').value = p.name || '';
-          document.getElementById('pfPhone').value = p.phone || '';
-          document.getElementById('pfAgeGender').value = p.ageGender || '';
-          document.getElementById('pfDoctor').value = p.doctor || '';
-          document.getElementById('pfDiag').value = p.diag || '';
-          document.getElementById('pfNotes').value = p.notes || '';
-        } else {
-          document.getElementById('patientModalTitle').innerText = 'Register New Patient';
-        }
+    // ==========================================
+    // 6. PATIENT FORM & ACTIONS
+    // ==========================================
+    function openPatientModal(editId = null) {
+      const title = document.getElementById('patientModalTitle');
+      const formId = document.getElementById('pFormId');
+      const formName = document.getElementById('pFormName');
+      const formPhone = document.getElementById('pFormPhone');
+      const formDoctor = document.getElementById('pFormDoctor');
+      const formDiag = document.getElementById('pFormDiag');
+      const formAllergies = document.getElementById('pFormAllergies');
 
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-      },
+      if (editId && APP_STATE.patients[editId]) {
+        const p = APP_STATE.patients[editId];
+        title.innerHTML = '<i class="fa-solid fa-user-pen text-brand-600"></i> Edit Patient';
+        formId.value = p.id;
+        formName.value = p.name;
+        formPhone.value = p.phone;
+        formDoctor.value = p.doctor || '';
+        formDiag.value = p.conditions || '';
+        formAllergies.value = p.allergies || '';
+      } else {
+        title.innerHTML = '<i class="fa-solid fa-user-plus text-brand-600"></i> New Patient Profile';
+        formId.value = '';
+        formName.value = '';
+        formPhone.value = '';
+        formDoctor.value = '';
+        formDiag.value = '';
+        formAllergies.value = '';
+      }
+      openModal('patientModal');
+    }
 
-      closePatientModal() {
-        const modal = document.getElementById('patientModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-      },
+    function editPatientProfile(id) {
+      openPatientModal(id);
+    }
 
-      async handleSavePatient(e) {
-        e.preventDefault();
-        const editId = document.getElementById('pfEditId').value;
-        const name = document.getElementById('pfName').value.trim();
-        const phone = document.getElementById('pfPhone').value.trim();
+    async function handlePatientFormSubmit(e) {
+      e.preventDefault();
+      const id = document.getElementById('pFormId').value;
+      const isNew = !id;
+      const patientId = isNew ? CryptoEngine.generateId('SGM') : id;
 
-        if (!name || !phone) return;
+      const patientData = {
+        id: patientId,
+        name: document.getElementById('pFormName').value.trim(),
+        phone: document.getElementById('pFormPhone').value.trim(),
+        doctor: document.getElementById('pFormDoctor').value.trim(),
+        conditions: document.getElementById('pFormDiag').value.trim(),
+        allergies: document.getElementById('pFormAllergies').value.trim(),
+        accessKey: isNew ? CryptoEngine.generateKey(24) : (APP_STATE.patients[patientId].accessKey || CryptoEngine.generateKey(24)),
+        medicines: isNew ? [] : (APP_STATE.patients[patientId].medicines || []),
+        lastUpdated: Date.now()
+      };
 
-        let patientObj;
-        if (editId && this.state.patients[editId]) {
-          patientObj = this.state.patients[editId];
-          patientObj.name = name;
-          patientObj.phone = phone;
-          patientObj.ageGender = document.getElementById('pfAgeGender').value.trim();
-          patientObj.doctor = document.getElementById('pfDoctor').value.trim();
-          patientObj.diag = document.getElementById('pfDiag').value.trim();
-          patientObj.notes = document.getElementById('pfNotes').value.trim();
-          patientObj.updatedAt = Date.now();
-        } else {
-          const newId = 'SGM-' + Math.floor(1000 + Math.random() * 9000);
-          patientObj = {
-            id: newId,
-            name: name,
-            phone: phone,
-            ageGender: document.getElementById('pfAgeGender').value.trim(),
-            doctor: document.getElementById('pfDoctor').value.trim(),
-            diag: document.getElementById('pfDiag').value.trim(),
-            notes: document.getElementById('pfNotes').value.trim(),
-            patientKey: CryptoEngine.generateAccessKey(24),
-            medicines: [],
-            createdAt: Date.now(),
-            updatedAt: Date.now()
-          };
-          this.state.patients[newId] = patientObj;
-        }
+      APP_STATE.patients[patientId] = patientData;
+      saveLocalData();
+      closeModal('patientModal');
 
-        this.closePatientModal();
-        this.saveLocalConfig();
-        this.renderAdminPatients();
-        this.updateAdminMetrics();
-        this.showToast('Patient record saved locally');
+      showToast(isNew ? 'Patient profile created!' : 'Patient details updated!');
+      renderAdminDashboard();
 
-        if (this.state.config.token) {
-          await this.pushToGitHub();
-        }
-      },
+      // Background push to Cloud
+      if (APP_STATE.config.token && APP_STATE.config.pass) {
+        saveToGitHubCloud();
+      }
+    }
 
-      openMedModal(pid) {
-        document.getElementById('mfPatientId').value = pid;
-        document.getElementById('mfMedIndex').value = '-1';
-        document.getElementById('medForm').reset();
-        document.getElementById('medModalTitle').innerText = 'Add Medicine to Timeline';
-        document.getElementById('mfReasonContainer').classList.add('hidden');
+    // ==========================================
+    // 7. MEDICINE FORM & LOGIC (WITH DOCTOR REVISION TOGGLE)
+    // ==========================================
+    function openMedModal() {
+      document.getElementById('medModalTitle').innerHTML = '<i class="fa-solid fa-pills text-brand-600"></i> Add Medicine';
+      document.getElementById('medEditIndex').value = '-1';
+      document.getElementById('mName').value = '';
+      document.getElementById('mornCheck').checked = false;
+      document.getElementById('noonCheck').checked = false;
+      document.getElementById('eveCheck').checked = false;
+      document.getElementById('nightCheck').checked = false;
+      toggleDoseQtyInput('morn');
+      toggleDoseQtyInput('noon');
+      toggleDoseQtyInput('eve');
+      toggleDoseQtyInput('night');
 
-        const modal = document.getElementById('medModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-      },
+      document.getElementById('mMeal').value = 'after';
+      document.getElementById('mTotalQty').value = '30';
+      document.getElementById('mInstructions').value = '';
 
-      openEditMedModal(pid, medIndex) {
-        const p = this.state.patients[pid];
-        if (!p || !p.medicines[medIndex]) return;
-        const m = p.medicines[medIndex];
+      // Reset Doctor Revision elements
+      document.getElementById('isDoctorRevised').checked = false;
+      document.getElementById('reviseReasonWrap').classList.add('hidden');
+      document.getElementById('mChangeReason').value = '';
+      document.getElementById('reviseContainer').classList.add('hidden'); // Only show in edit mode
 
-        document.getElementById('mfPatientId').value = pid;
-        document.getElementById('mfMedIndex').value = medIndex;
-        document.getElementById('medModalTitle').innerText = 'Modify Dose / Strength';
+      openModal('medModal');
+    }
 
-        document.getElementById('mfName').value = m.name;
-        document.getElementById('mfMornQty').value = m.mornQty !== undefined ? m.mornQty : (m.morn ? 1 : 0);
-        document.getElementById('mfNoonQty').value = m.noonQty !== undefined ? m.noonQty : (m.noon ? 1 : 0);
-        document.getElementById('mfEveQty').value = m.eveQty !== undefined ? m.eveQty : (m.eve ? 1 : 0);
-        document.getElementById('mfNightQty').value = m.nightQty !== undefined ? m.nightQty : (m.night ? 1 : 0);
+    function editMedicine(idx) {
+      const p = APP_STATE.patients[APP_STATE.currentPatientId];
+      const m = p.medicines[idx];
 
-        document.getElementById('mfMeal').value = m.meal || 'after';
-        document.getElementById('mfType').value = m.type || 'Tablet';
-        document.getElementById('mfQty').value = m.stockQty || 0;
+      document.getElementById('medModalTitle').innerHTML = '<i class="fa-solid fa-pen text-brand-600"></i> Edit Medicine Dose';
+      document.getElementById('medEditIndex').value = idx;
+      document.getElementById('mName').value = m.name;
 
-        document.getElementById('mfReasonContainer').classList.remove('hidden');
-        document.getElementById('mfReason').value = '';
+      document.getElementById('mornCheck').checked = !!m.morn;
+      document.getElementById('mornQty').value = m.mornQty || 1;
+      toggleDoseQtyInput('morn');
 
-        const modal = document.getElementById('medModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-      },
+      document.getElementById('noonCheck').checked = !!m.noon;
+      document.getElementById('noonQty').value = m.noonQty || 1;
+      toggleDoseQtyInput('noon');
 
-      closeMedModal() {
-        const modal = document.getElementById('medModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-      },
+      document.getElementById('eveCheck').checked = !!m.eve;
+      document.getElementById('eveQty').value = m.eveQty || 1;
+      toggleDoseQtyInput('eve');
 
-      async handleSaveMed(e) {
-        e.preventDefault();
-        const pid = document.getElementById('mfPatientId').value;
-        const medIndex = parseInt(document.getElementById('mfMedIndex').value);
-        const p = this.state.patients[pid];
-        if (!p) return;
+      document.getElementById('nightCheck').checked = !!m.night;
+      document.getElementById('nightQty').value = m.nightQty || 0.5;
+      toggleDoseQtyInput('night');
 
-        const mornQty = parseFloat(document.getElementById('mfMornQty').value) || 0;
-        const noonQty = parseFloat(document.getElementById('mfNoonQty').value) || 0;
-        const eveQty = parseFloat(document.getElementById('mfEveQty').value) || 0;
-        const nightQty = parseFloat(document.getElementById('mfNightQty').value) || 0;
-        const perDay = mornQty + noonQty + eveQty + nightQty;
+      document.getElementById('mMeal').value = m.meal || 'after';
+      document.getElementById('mTotalQty').value = m.qty;
+      document.getElementById('mInstructions').value = m.instructions || '';
 
-        const medObj = {
-          name: document.getElementById('mfName').value.trim(),
-          mornQty: mornQty,
-          noonQty: noonQty,
-          eveQty: eveQty,
-          nightQty: nightQty,
-          perDay: perDay > 0 ? perDay : 1,
-          meal: document.getElementById('mfMeal').value,
-          type: document.getElementById('mfType').value,
-          stockQty: parseFloat(document.getElementById('mfQty').value) || 0,
-          discontinued: false
-        };
+      // Show Revision Button specifically during Edit
+      document.getElementById('reviseContainer').classList.remove('hidden');
+      document.getElementById('isDoctorRevised').checked = false;
+      document.getElementById('reviseReasonWrap').classList.add('hidden');
+      document.getElementById('mChangeReason').value = '';
 
-        if (medIndex >= 0) {
-          const old = p.medicines[medIndex];
-          const reason = document.getElementById('mfReason').value.trim() || 'Dose revised by physician';
-          medObj.history = old.history || [];
-          medObj.history.unshift({
+      openModal('medModal');
+    }
+
+    function toggleDoseQtyInput(slot) {
+      const isChecked = document.getElementById(`${slot}Check`).checked;
+      const wrap = document.getElementById(`${slot}QtyWrap`);
+      if (isChecked) {
+        wrap.classList.remove('hidden');
+      } else {
+        wrap.classList.add('hidden');
+      }
+    }
+
+    function toggleRevisionNote(isChecked) {
+      const wrap = document.getElementById('reviseReasonWrap');
+      if (isChecked) {
+        wrap.classList.remove('hidden');
+      } else {
+        wrap.classList.add('hidden');
+      }
+    }
+
+    async function handleMedicineFormSubmit(e) {
+      e.preventDefault();
+      const p = APP_STATE.patients[APP_STATE.currentPatientId];
+      const editIdx = parseInt(document.getElementById('medEditIndex').value);
+
+      const isRevisedChecked = document.getElementById('isDoctorRevised').checked;
+      const revisionReason = document.getElementById('mChangeReason').value.trim() || 'Dose revised by physician';
+
+      const medData = {
+        name: document.getElementById('mName').value.trim(),
+        morn: document.getElementById('mornCheck').checked,
+        mornQty: parseFloat(document.getElementById('mornQty').value) || 1,
+        noon: document.getElementById('noonCheck').checked,
+        noonQty: parseFloat(document.getElementById('noonQty').value) || 1,
+        eve: document.getElementById('eveCheck').checked,
+        eveQty: parseFloat(document.getElementById('eveQty').value) || 1,
+        night: document.getElementById('nightCheck').checked,
+        nightQty: parseFloat(document.getElementById('nightQty').value) || 0.5,
+        meal: document.getElementById('mMeal').value,
+        qty: parseFloat(document.getElementById('mTotalQty').value) || 0,
+        instructions: document.getElementById('mInstructions').value.trim(),
+        discontinued: false,
+        history: []
+      };
+
+      if (!p.medicines) p.medicines = [];
+
+      if (editIdx > -1) {
+        const oldMed = p.medicines[editIdx];
+
+        // ONLY ARCHIVE / REVISE IF THE SPECIFIC BUTTON WAS CHECKED
+        if (isRevisedChecked) {
+          medData.history = oldMed.history || [];
+          medData.history.unshift({
             date: new Date().toLocaleDateString(),
-            reason: reason,
-            prevStock: old.stockQty
+            reason: `${revisionReason} (Previous: ${oldMed.name}, Qty: ${oldMed.qty})`
           });
-          p.medicines[medIndex] = medObj;
         } else {
-          if (!p.medicines) p.medicines = [];
-          p.medicines.push(medObj);
+          // Keep existing history intact without creating duplicate revised log
+          medData.history = oldMed.history || [];
         }
 
-        p.updatedAt = Date.now();
-        this.closeMedModal();
-        this.saveLocalConfig();
-        this.renderAdminPatients();
-        this.updateAdminMetrics();
-        this.showToast('Medicine schedule updated');
+        p.medicines[editIdx] = medData;
+        showToast(isRevisedChecked ? 'Medicine marked as Doctor Revised!' : 'Medicine updated!');
+      } else {
+        p.medicines.push(medData);
+        showToast('Medicine added to prescription!');
+      }
 
-        if (this.state.config.token) {
-          await this.pushToGitHub();
+      saveLocalData();
+      closeModal('medModal');
+      renderAdminPatientView(p.id);
+
+      if (APP_STATE.config.token && APP_STATE.config.pass) {
+        saveToGitHubCloud();
+      }
+    }
+
+    function stopMedicine(idx) {
+      const p = APP_STATE.patients[APP_STATE.currentPatientId];
+      const reason = prompt("Dawai band karne ka kaaran (Stop Reason):", "Course completed / Doctor advised to stop");
+      if (reason === null) return;
+
+      p.medicines[idx].discontinued = true;
+      if (!p.medicines[idx].history) p.medicines[idx].history = [];
+      p.medicines[idx].history.unshift({
+        date: new Date().toLocaleDateString(),
+        reason: `Dawai Band Ki Gayi: ${reason}`
+      });
+
+      saveLocalData();
+      renderAdminPatientView(p.id);
+      showToast('Medicine moved to stopped history');
+
+      if (APP_STATE.config.token && APP_STATE.config.pass) {
+        saveToGitHubCloud();
+      }
+    }
+
+    // ==========================================
+    // 8. PATIENT DIGITAL PASS & SHARING
+    // ==========================================
+    function openShareModal(patientId) {
+      const p = APP_STATE.patients[patientId];
+      const canvas = document.getElementById('qrcodeCanvas');
+      canvas.innerHTML = '';
+
+      // Direct URL with Repo fallback parameter for zero-config patient access
+      const baseAppUrl = window.location.href.split('#')[0];
+      const shareUrl = `${baseAppUrl}#/view?id=${p.id}&k=${p.accessKey}&repo=${encodeURIComponent(APP_STATE.config.repo)}`;
+
+      new QRCode(canvas, {
+        text: shareUrl,
+        width: 180,
+        height: 180,
+        colorDark: "#0f766e",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+
+      const messageText = `Namaste ${p.name} ji,\nShree Ganesh Medicals se aapka Digital Prescription Timeline Link yeh raha:\n${shareUrl}\n\nIsko click karke aap dekh sakte hain ki konsi dawai kab leni hai.`;
+      const waBtn = document.getElementById('modalWaBtn');
+      waBtn.onclick = () => window.open(`https://wa.me/91${p.phone}?text=${encodeURIComponent(messageText)}`, '_blank');
+
+      openModal('shareModal');
+      window.currentShareUrl = shareUrl;
+    }
+
+    function copyShareUrl() {
+      if (window.currentShareUrl) {
+        navigator.clipboard.writeText(window.currentShareUrl);
+        showToast('Link copied to clipboard!');
+      }
+    }
+
+    // ==========================================
+    // 9. LIVE SYNC ENGINE (TWO-WAY AES-GCM GITHUB)
+    // ==========================================
+    async function manualSync(silent = false) {
+      const spinner = document.getElementById('syncSpinner');
+      spinner.classList.add('fa-spin');
+
+      try {
+        const { token, repo, pass } = APP_STATE.config;
+        if (!token || !repo) {
+          if (!silent) openModal('settingsModal');
+          return;
         }
-      },
-
-      async discontinueMedicine(pid, medIndex) {
-        const p = this.state.patients[pid];
-        if (!p || !p.medicines[medIndex]) return;
-
-        p.medicines[medIndex].discontinued = true;
-        p.medicines[medIndex].discontinuedDate = new Date().toLocaleDateString();
-        p.medicines[medIndex].discontinuedReason = 'Stopped / Completed course';
-        p.updatedAt = Date.now();
-
-        this.saveLocalConfig();
-        this.renderAdminPatients();
-        this.updateAdminMetrics();
-        this.showToast('Medicine archived in stopped history');
-
-        if (this.state.config.token) {
-          await this.pushToGitHub();
-        }
-      },
-
-      openPassQrModalForPatient(pid) {
-        const p = this.state.patients[pid];
-        if (!p) return;
-        this.generateQrModal(p);
-      },
-
-      openPassQrModal() {
-        const p = this.state.patients[this.state.currentViewPatientId];
-        if (p) this.generateQrModal(p);
-      },
-
-      generateQrModal(p) {
-        document.getElementById('qrPatientName').innerText = p.name;
-        const box = document.getElementById('qrCanvasBox');
-        box.innerHTML = '';
-        const shareUrl = this.getShareUrl(p);
-
-        new QRCode(box, {
-          text: shareUrl,
-          width: 190,
-          height: 190,
-          colorDark: "#0f172a",
-          colorLight: "#ffffff",
-          correctLevel: QRCode.CorrectLevel.M
-        });
-
-        const modal = document.getElementById('qrModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-      },
-
-      closePassQrModal() {
-        const modal = document.getElementById('qrModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-      },
-
-      copyPatientLink() {
-        const p = this.state.patients[this.state.currentViewPatientId] || Object.values(this.state.patients)[0];
-        if (!p) return;
-        const url = this.getShareUrl(p);
-
-        const tempInput = document.createElement("input");
-        tempInput.value = url;
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand("copy");
-        document.body.removeChild(tempInput);
-
-        this.showToast('Patient Pass link copied to clipboard!');
-      },
-
-      sharePatientScheduleWhatsApp() {
-        const p = this.state.patients[this.state.currentViewPatientId];
-        if (!p) return;
-        const url = this.getShareUrl(p);
-        const text = encodeURIComponent(`Namaste ${p.name} ji, Shree Ganesh Medicals se aapka live medication timeline link: ${url}`);
-        window.open(`https://wa.me/91${p.phone}?text=${text}`, '_blank');
-      },
-
-      openSettingsModal() {
-        const cfg = this.state.config;
-        document.getElementById('cfgToken').value = cfg.token || '';
-        document.getElementById('cfgRepo').value = cfg.repo || '';
-        document.getElementById('cfgPath').value = cfg.path || 'data.json';
-        document.getElementById('cfgPass').value = cfg.pass || '';
-
-        const modal = document.getElementById('settingsModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-      },
-
-      closeSettingsModal() {
-        const modal = document.getElementById('settingsModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-      },
-
-      async saveSettingsAndConnect() {
-        this.state.config.token = document.getElementById('cfgToken').value.trim();
-        this.state.config.repo = document.getElementById('cfgRepo').value.trim();
-        this.state.config.path = document.getElementById('cfgPath').value.trim() || 'data.json';
-        this.state.config.pass = document.getElementById('cfgPass').value.trim();
-
-        this.saveLocalConfig();
-        this.closeSettingsModal();
-        this.showToast('Settings saved. Syncing with GitHub...');
-        await this.manualSync(true);
-      },
-
-      async manualSync(showFeedback = true) {
-        const cfg = this.state.config;
-        if (!cfg.repo) {
-          if (showFeedback) this.openSettingsModal();
+        if (!pass) {
+          if (!silent) alert("Please enter your Master Passphrase in settings to decrypt data.");
           return;
         }
 
-        const icon = document.getElementById('syncIcon');
-        const text = document.getElementById('syncText');
-        icon.className = 'fa-solid fa-arrows-rotate spin-sync text-amber-500';
-        text.innerText = 'Syncing...';
-
-        try {
-          const remote = await GitHubSync.pullRemoteDatabase(cfg);
-          if (remote) {
-            this.state.currentSha = remote.sha;
-            const records = remote.payload.records || {};
-
-            if (cfg.pass) {
-              for (const pid in records) {
-                try {
-                  const decrypted = await CryptoEngine.decryptObject(records[pid], cfg.pass);
-                  this.state.patients[pid] = decrypted;
-                } catch (err) {
-                  console.warn(`Could not decrypt patient ${pid} with current pass.`);
-                }
-              }
+        const remote = await GitHubSync.pullRemoteData();
+        if (remote && remote.data && remote.data.patients) {
+          for (let id in remote.data.patients) {
+            try {
+              const cipherPayload = remote.data.patients[id];
+              const decrypted = await CryptoEngine.decrypt(cipherPayload, pass);
+              APP_STATE.patients[id] = decrypted;
+            } catch (decErr) {
+              console.warn(`Could not decrypt record: ${id}`);
             }
           }
-
-          if (cfg.token && cfg.pass) {
-            await this.pushToGitHub();
-          }
-
-          icon.className = 'fa-solid fa-cloud text-brand-600';
-          text.innerText = 'Synced';
-          if (showFeedback) this.showToast('Synchronized with GitHub cloud');
-        } catch (err) {
-          console.error(err);
-          icon.className = 'fa-solid fa-cloud-arrow-down text-rose-500';
-          text.innerText = 'Sync Error';
-          if (showFeedback) this.showToast('Sync Failed: ' + err.message, 'error');
+          saveLocalData();
+          if (!APP_STATE.isPatientView) renderAdminDashboard();
+          if (!silent) showToast('GitHub data synced successfully!');
         }
-
-        this.renderAdminPatients();
-        this.updateAdminMetrics();
-      },
-
-      async pushToGitHub() {
-        const cfg = this.state.config;
-        if (!cfg.token || !cfg.repo || !cfg.pass) return;
-
-        const encryptedRecords = {};
-        for (const pid in this.state.patients) {
-          const patientObj = this.state.patients[pid];
-          encryptedRecords[pid] = await CryptoEngine.encryptObject(patientObj, cfg.pass);
-        }
-
-        const dbPayload = {
-          version: 1,
-          updated_at: new Date().toISOString(),
-          store: "Shree Ganesh Medicals",
-          records: encryptedRecords
-        };
-
-        const newSha = await GitHubSync.pushRemoteDatabase(cfg, dbPayload, this.state.currentSha);
-        this.state.currentSha = newSha;
-      },
-
-      setupPWA() {
-        window.addEventListener('beforeinstallprompt', (e) => {
-          e.preventDefault();
-          this.state.deferredPrompt = e;
-          const banner = document.getElementById('pwaBanner');
-          if (banner) banner.classList.remove('hidden');
-        });
-
-        const manifestObj = {
-          name: "SGM Patient Rx Hub",
-          short_name: "SGM Rx",
-          start_url: window.location.href,
-          display: "standalone",
-          background_color: "#0d9488",
-          theme_color: "#0d9488",
-          icons: [
-            {
-              src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230d9488'/><text y='.7em' x='50%' text-anchor='middle' font-size='60'>💊</text></svg>",
-              sizes: "192x192 512x512",
-              type: "image/svg+xml"
-            }
-          ]
-        };
-        const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: 'application/json' });
-        const manifestUrl = URL.createObjectURL(manifestBlob);
-        const link = document.createElement('link');
-        link.rel = 'manifest';
-        link.href = manifestUrl;
-        document.head.appendChild(link);
-
-        if ('serviceWorker' in navigator) {
-          const swCode = `
-            const CACHE_NAME = 'sgm-rx-cache-v1';
-            self.addEventListener('install', (e) => self.skipWaiting());
-            self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
-            self.addEventListener('fetch', (e) => {
-              e.respondWith(
-                fetch(e.request).catch(() => caches.match(e.request))
-              );
-            });
-          `;
-          const swBlob = new Blob([swCode], { type: 'text/javascript' });
-          const swUrl = URL.createObjectURL(swBlob);
-          navigator.serviceWorker.register(swUrl).catch(() => {});
-        }
-      },
-
-      installPWA() {
-        if (this.state.deferredPrompt) {
-          this.state.deferredPrompt.prompt();
-          this.state.deferredPrompt.userChoice.then(() => {
-            this.state.deferredPrompt = null;
-            document.getElementById('pwaBanner').classList.add('hidden');
-          });
-        } else {
-          this.showToast('Tap browser menu (...) and choose "Add to Home Screen"');
-        }
-      },
-
-      showToast(msg, type = 'success') {
-        const box = document.getElementById('toastBox');
-        const icon = document.getElementById('toastIcon');
-        const text = document.getElementById('toastMsg');
-
-        text.innerText = msg;
-        if (type === 'error') {
-          icon.className = 'fa-solid fa-circle-xmark text-rose-500 text-lg';
-        } else if (type === 'info') {
-          icon.className = 'fa-solid fa-circle-info text-sky-500 text-lg';
-        } else {
-          icon.className = 'fa-solid fa-circle-check text-brand-600 text-lg';
-        }
-
-        box.classList.remove('translate-y-[-120%]', 'opacity-0');
-        box.classList.add('translate-y-0', 'opacity-100');
-
-        setTimeout(() => {
-          box.classList.add('translate-y-[-120%]', 'opacity-0');
-          box.classList.remove('translate-y-0', 'opacity-100');
-        }, 3200);
+      } catch (err) {
+        if (!silent) alert('Sync failed: ' + err.message);
+      } finally {
+        spinner.classList.remove('fa-spin');
       }
-    };
+    }
 
-    window.addEventListener('DOMContentLoaded', () => App.init());
+    async function saveToGitHubCloud() {
+      const { repo, token, pass } = APP_STATE.config;
+      if (!repo || !token || !pass) return;
+
+      try {
+        const remote = await GitHubSync.pullRemoteData();
+        const cloudJson = remote ? remote.data : { patients: {} };
+        if (!cloudJson.patients) cloudJson.patients = {};
+
+        // Encrypt all patients with Master Key
+        for (let id in APP_STATE.patients) {
+          const encPayload = await CryptoEngine.encrypt(APP_STATE.patients[id], pass);
+          cloudJson.patients[id] = encPayload;
+        }
+
+        cloudJson.updatedAt = Date.now();
+        await GitHubSync.pushRemoteData(cloudJson);
+        console.log("GitHub sync successful.");
+      } catch (err) {
+        console.error("Auto cloud sync error:", err);
+      }
+    }
+
+    function saveLocalData() {
+      localStorage.setItem('sgm_patients', JSON.stringify(APP_STATE.patients));
+    }
+
+    function saveAndSyncSettings() {
+      APP_STATE.config = {
+        token: document.getElementById('cfgToken').value.trim(),
+        repo: document.getElementById('cfgRepo').value.trim(),
+        path: document.getElementById('cfgPath').value.trim() || 'data.json',
+        pass: document.getElementById('cfgPass').value.trim()
+      };
+      localStorage.setItem('sgm_cfg', JSON.stringify(APP_STATE.config));
+      closeModal('settingsModal');
+      showToast('Settings saved. Syncing with GitHub...');
+      manualSync();
+    }
+
+    function populateSettingsForm() {
+      document.getElementById('cfgToken').value = APP_STATE.config.token || '';
+      document.getElementById('cfgRepo').value = APP_STATE.config.repo || '';
+      document.getElementById('cfgPath').value = APP_STATE.config.path || 'data.json';
+      document.getElementById('cfgPass').value = APP_STATE.config.pass || '';
+    }
+
+    // ==========================================
+    // 10. UI HELPERS & PWA REGISTRATION
+    // ==========================================
+    function navigateTo(hash) {
+      window.location.hash = hash;
+    }
+
+    function navigateHome() {
+      if (!APP_STATE.isPatientView) navigateTo('');
+    }
+
+    function openModal(id) {
+      const el = document.getElementById(id);
+      el.classList.remove('hidden');
+      el.classList.add('flex');
+    }
+
+    function closeModal(id) {
+      const el = document.getElementById(id);
+      el.classList.add('hidden');
+      el.classList.remove('flex');
+    }
+
+    function showToast(msg) {
+      const c = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 pointer-events-auto transition-all';
+      toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> ${msg}`;
+      c.appendChild(toast);
+      setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2500);
+    }
+
+    function filterPatients(query) {
+      const q = query.toLowerCase();
+      const filtered = Object.values(APP_STATE.patients).filter(p => 
+        p.name.toLowerCase().includes(q) ||
+        p.phone.includes(q) ||
+        (p.conditions && p.conditions.toLowerCase().includes(q))
+      );
+      document.getElementById('patientListContainer').innerHTML = renderPatientCardList(filtered);
+    }
+
+    // PWA Auto-Registration
+    function setupPWA() {
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        APP_STATE.deferredPrompt = e;
+        document.getElementById('pwaBanner').classList.remove('hidden');
+      });
+
+      // Inline Service Worker Blob
+      if ('serviceWorker' in navigator) {
+        const swBlob = new Blob([`
+          self.addEventListener('install', e => self.skipWaiting());
+          self.addEventListener('activate', e => self.clients.claim());
+          self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
+        `], { type: 'application/javascript' });
+        navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+      }
+    }
+
+    function installPWA() {
+      if (APP_STATE.deferredPrompt) {
+        APP_STATE.deferredPrompt.prompt();
+        APP_STATE.deferredPrompt.userChoice.then(() => {
+          document.getElementById('pwaBanner').classList.add('hidden');
+        });
+      }
+    }
   </script>
 </body>
 </html>
