@@ -91,7 +91,6 @@
         <button onclick="closeModal('settingsModal')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
-      <!-- LOCAL BACKUP & RESTORE SECTION -->
       <div class="mt-4 p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
         <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
           <i class="fa-solid fa-database text-brand-600"></i> Offline Backup & Restore
@@ -340,6 +339,7 @@
 
     // ==========================================
     // 2. CRYPTO ENGINE (AES-GCM 256-BIT)
+    // Supports both {salt, iv, data} and {s, i, d}
     // ==========================================
     const CryptoEngine = {
       async deriveKey(passphrase, salt) {
@@ -365,27 +365,43 @@
         const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded);
 
         return {
-          s: btoa(String.fromCharCode(...salt)),
-          i: btoa(String.fromCharCode(...iv)),
-          d: btoa(String.fromCharCode(...new Uint8Array(cipher)))
+          salt: btoa(String.fromCharCode(...salt)),
+          iv: btoa(String.fromCharCode(...iv)),
+          data: btoa(String.fromCharCode(...new Uint8Array(cipher)))
         };
       },
 
       async decrypt(cipherPackage, passphrase) {
-        if (!cipherPackage || !cipherPackage.s || !cipherPackage.i || !cipherPackage.d) {
+        if (!cipherPackage) throw new Error("Cipher package empty");
+        const sB64 = cipherPackage.salt || cipherPackage.s;
+        const iB64 = cipherPackage.iv || cipherPackage.i;
+        const dB64 = cipherPackage.data || cipherPackage.d;
+
+        if (!sB64 || !iB64 || !dB64) {
           throw new Error("Invalid cipher package format");
         }
-        const salt = Uint8Array.from(atob(cipherPackage.s), c => c.charCodeAt(0));
-        const iv = Uint8Array.from(atob(cipherPackage.i), c => c.charCodeAt(0));
-        const cipher = Uint8Array.from(atob(cipherPackage.d), c => c.charCodeAt(0));
+
+        const salt = Uint8Array.from(atob(sB64), c => c.charCodeAt(0));
+        const iv = Uint8Array.from(atob(iB64), c => c.charCodeAt(0));
+        const cipher = Uint8Array.from(atob(dB64), c => c.charCodeAt(0));
         const key = await this.deriveKey(passphrase, salt);
 
         const decrypted = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher);
         return JSON.parse(new TextDecoder().decode(decrypted));
       },
 
-      generateId(prefix = 'SGM') {
-        return `${prefix}-${Math.floor(1000 + Math.random() * 9000)}`;
+      getNextPatientId() {
+        const existingIds = Object.keys(APP_STATE.patients);
+        let maxNum = 0;
+        existingIds.forEach(id => {
+          const match = id.match(/SGMP-?(\d+)/i) || id.match(/SGM-?(\d+)/i);
+          if (match && match[1]) {
+            const num = parseInt(match[1], 10);
+            if (num > maxNum && num < 1000) maxNum = num; // sequential counter
+          }
+        });
+        const next = maxNum + 1;
+        return `SGMP-${next < 10 ? '0' + next : next}`;
       },
 
       generateKey(len = 24) {
@@ -396,7 +412,7 @@
     };
 
     // ==========================================
-    // 3. GITHUB API LIVE SYNC
+    // 3. GITHUB API LIVE SYNC (READ/WRITE)
     // ==========================================
     const GitHubSync = {
       async pullRemoteData(targetRepo = null) {
@@ -417,7 +433,7 @@
           });
 
           if (res.status === 404) {
-            return { sha: null, data: { patients: {}, keyRegistry: null } };
+            return { sha: null, data: { version: 1, store: "Shree Ganesh Medicals", records: {} } };
           }
           if (!res.ok) {
             const err = await res.json();
@@ -460,7 +476,7 @@
         const utf8Content = btoa(unescape(encodeURIComponent(JSON.stringify(dataPayload, null, 2))));
 
         const bodyData = {
-          message: `SGM Live Cloud Update: ${new Date().toISOString()}`,
+          message: `SGM Rx Update: ${new Date().toISOString()}`,
           content: utf8Content
         };
         if (APP_STATE.fileSha) bodyData.sha = APP_STATE.fileSha;
@@ -486,7 +502,7 @@
     };
 
     // ==========================================
-    // 4. EXCEL EXPORT & BACKUP / RESTORE ENGINES
+    // 4. EXCEL EXPORT & BACKUP / RESTORE
     // ==========================================
     function exportToExcel() {
       const patients = Object.values(APP_STATE.patients);
@@ -857,28 +873,33 @@
         const repo = repoParam || APP_STATE.config.repo;
         const remote = await GitHubSync.pullRemoteData(repo);
         
-        if (!remote || !remote.data || !remote.data.patients || !remote.data.patients[patientId]) {
+        const records = (remote && remote.data) ? (remote.data.records || remote.data.patients || {}) : {};
+        if (!records[patientId]) {
           throw new Error("Patient record not found in repository database.");
         }
 
-        const cipherObj = remote.data.patients[patientId];
+        const cipherObj = records[patientId];
         const patientData = await CryptoEngine.decrypt(cipherObj, accessKey);
 
         const activeMeds = (patientData.medicines || []).filter(m => !m.discontinued);
 
         root.innerHTML = `
-          <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs mb-4">
-            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
-              <span class="text-[10px] font-mono font-bold bg-teal-50 text-teal-700 px-2 py-0.5 rounded-md">${patientData.id}</span>
-              <span class="text-[10px] text-slate-400">Updated: ${new Date(patientData.lastUpdated || Date.now()).toLocaleDateString()}</span>
+          <!-- PROMINENT PATIENT HEADER CARD -->
+          <div class="bg-gradient-to-r from-teal-700 to-brand-800 text-white rounded-2xl p-5 shadow-sm mb-4">
+            <div class="flex justify-between items-center pb-2.5 border-b border-white/20">
+              <span class="text-xs font-mono font-extrabold bg-white/20 px-2.5 py-1 rounded-lg tracking-wider">
+                PATIENT ID: ${patientData.id}
+              </span>
+              <span class="text-[10px] text-teal-200">Shree Ganesh Medicals</span>
             </div>
-            <h2 class="text-lg font-bold text-slate-900 mt-2">${patientData.name}</h2>
-            <p class="text-xs text-slate-500">Doctor: <b>${patientData.doctor || 'General'}</b></p>
-            ${patientData.allergies ? `<div class="mt-2 text-xs text-red-600 bg-red-50 p-2 rounded-lg font-medium">⚠️ Allergy: ${patientData.allergies}</div>` : ''}
+            <h2 class="text-xl font-extrabold mt-2.5 leading-tight">${patientData.name}</h2>
+            <p class="text-xs text-teal-100 mt-1">Consulting Doctor: <b>${patientData.doctor || 'General'}</b></p>
+            ${patientData.allergies ? `<div class="mt-2.5 text-xs text-red-200 bg-red-900/40 p-2 rounded-lg font-medium border border-red-500/30">⚠️ Allergy: ${patientData.allergies}</div>` : ''}
           </div>
 
-          <div class="mb-3">
+          <div class="mb-3 flex items-center justify-between">
             <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide">Aapki Active Dawaiyan (${activeMeds.length})</h3>
+            <span class="text-[10px] text-slate-400">Live Rx Schedule</span>
           </div>
 
           <div class="space-y-3">
@@ -1055,7 +1076,7 @@
       e.preventDefault();
       const id = document.getElementById('pFormId').value;
       const isNew = !id;
-      const patientId = isNew ? CryptoEngine.generateId('SGM') : id;
+      const patientId = isNew ? CryptoEngine.getNextPatientId() : id;
 
       let key = APP_STATE.patientKeys[patientId];
       if (!key) {
@@ -1079,7 +1100,7 @@
       saveLocalData();
       closeModal('patientModal');
 
-      showToast(isNew ? 'Patient profile created!' : 'Patient details updated!');
+      showToast(isNew ? `Patient ${patientId} profile created!` : 'Patient details updated!');
       renderAdminDashboard();
 
       if (APP_STATE.config.token && APP_STATE.config.pass) {
@@ -1265,7 +1286,7 @@
         correctLevel: QRCode.CorrectLevel.M
       });
 
-      const messageText = `Namaste ${p.name} ji,\nShree Ganesh Medicals se aapka Digital Prescription Timeline Link yeh raha:\n${shareUrl}\n\nIsko click karke aap dekh sakte hain ki konsi dawai kab leni hai.`;
+      const messageText = `Namaste ${p.name} ji,\nShree Ganesh Medicals se aapka Digital Prescription Timeline Link yeh raha:\n${shareUrl}\n\nPatient ID: ${p.id}\nIsko click karke aap dekh sakte hain ki konsi dawai kab leni hai.`;
       const waBtn = document.getElementById('modalWaBtn');
       waBtn.onclick = () => window.open(`https://wa.me/91${p.phone}?text=${encodeURIComponent(messageText)}`, '_blank');
 
@@ -1282,6 +1303,7 @@
 
     // ==========================================
     // 9. DUAL BACKWARD-COMPATIBLE CLOUD SYNC
+    // EXACT MATCH FOR `records`, `salt`, `iv`, `data`
     // ==========================================
     async function manualSync(silent = false) {
       const spinner = document.getElementById('syncSpinner');
@@ -1300,10 +1322,10 @@
 
         const remote = await GitHubSync.pullRemoteData();
         if (remote && remote.data) {
-          const cloudPatients = remote.data.patients || {};
+          // Exactly read records OR patients from GitHub JSON
+          const cloudRecords = remote.data.records || remote.data.patients || {};
           const cloudKeyReg = remote.data.keyRegistry;
 
-          // 1. Decrypt Key Registry agar available ho
           if (cloudKeyReg) {
             try {
               const decryptedKeys = await CryptoEngine.decrypt(cloudKeyReg, pass);
@@ -1315,12 +1337,11 @@
 
           let count = 0;
 
-          // 2. Decode Each Patient (Old format + New format compatible)
-          for (let id in cloudPatients) {
-            const cipherObj = cloudPatients[id];
+          for (let id in cloudRecords) {
+            const cipherObj = cloudRecords[id];
             let decryptedPatient = null;
 
-            // Strategy A: Individual access key se try karo
+            // Strategy A: Individual key se
             const pKey = APP_STATE.patientKeys[id];
             if (pKey) {
               try {
@@ -1328,7 +1349,7 @@
               } catch (e) {}
             }
 
-            // Strategy B: Agar fail hua toh purani entry hai -> Master Key se direct open karo
+            // Strategy B: Master Key se (Direct unlock of existing entries)
             if (!decryptedPatient) {
               try {
                 decryptedPatient = await CryptoEngine.decrypt(cipherObj, pass);
@@ -1364,21 +1385,21 @@
 
       try {
         const remote = await GitHubSync.pullRemoteData();
-        const cloudJson = remote ? remote.data : { patients: {}, keyRegistry: null };
-        if (!cloudJson.patients) cloudJson.patients = {};
+        const cloudJson = remote ? remote.data : { version: 1, store: "Shree Ganesh Medicals", records: {} };
+        if (!cloudJson.records) cloudJson.records = cloudJson.patients || {};
 
         for (let id in APP_STATE.patients) {
           const p = APP_STATE.patients[id];
           const pKey = p.accessKey || APP_STATE.patientKeys[id];
           if (pKey) {
             const encPayload = await CryptoEngine.encrypt(p, pKey);
-            cloudJson.patients[id] = encPayload;
+            cloudJson.records[id] = encPayload;
           }
         }
 
         const encKeyReg = await CryptoEngine.encrypt(APP_STATE.patientKeys, pass);
         cloudJson.keyRegistry = encKeyReg;
-        cloudJson.updatedAt = Date.now();
+        cloudJson.updated_at = new Date().toISOString();
 
         await GitHubSync.pushRemoteData(cloudJson);
         console.log("GitHub sync successful.");
@@ -1443,6 +1464,7 @@
       const filtered = Object.values(APP_STATE.patients).filter(p => 
         p.name.toLowerCase().includes(q) ||
         p.phone.includes(q) ||
+        p.id.toLowerCase().includes(q) ||
         (p.conditions && p.conditions.toLowerCase().includes(q))
       );
       document.getElementById('patientListContainer').innerHTML = renderPatientCardList(filtered);
