@@ -339,7 +339,6 @@
 
     // ==========================================
     // 2. CRYPTO ENGINE (AES-GCM 256-BIT)
-    // Supports both {salt, iv, data} and {s, i, d}
     // ==========================================
     const CryptoEngine = {
       async deriveKey(passphrase, salt) {
@@ -372,13 +371,13 @@
       },
 
       async decrypt(cipherPackage, passphrase) {
-        if (!cipherPackage) throw new Error("Cipher package empty");
+        if (!cipherPackage) throw new Error("Empty package");
         const sB64 = cipherPackage.salt || cipherPackage.s;
         const iB64 = cipherPackage.iv || cipherPackage.i;
         const dB64 = cipherPackage.data || cipherPackage.d;
 
         if (!sB64 || !iB64 || !dB64) {
-          throw new Error("Invalid cipher package format");
+          throw new Error("Invalid cipher package");
         }
 
         const salt = Uint8Array.from(atob(sB64), c => c.charCodeAt(0));
@@ -397,7 +396,7 @@
           const match = id.match(/SGMP-?(\d+)/i) || id.match(/SGM-?(\d+)/i);
           if (match && match[1]) {
             const num = parseInt(match[1], 10);
-            if (num > maxNum && num < 1000) maxNum = num; // sequential counter
+            if (num > maxNum && num < 1000) maxNum = num;
           }
         });
         const next = maxNum + 1;
@@ -412,7 +411,7 @@
     };
 
     // ==========================================
-    // 3. GITHUB API LIVE SYNC (READ/WRITE)
+    // 3. GITHUB API LIVE SYNC (AUTO SHA MANAGEMENT)
     // ==========================================
     const GitHubSync = {
       async pullRemoteData(targetRepo = null) {
@@ -441,6 +440,9 @@
           }
 
           const json = await res.json();
+          APP_STATE.fileSha = json.sha;
+          localStorage.setItem('sgm_file_sha', json.sha);
+
           const content = decodeURIComponent(escape(atob(json.content)));
           return { sha: json.sha, data: JSON.parse(content) };
         }
@@ -473,13 +475,36 @@
         if (!token || !repo) throw new Error("GitHub token and repo are required to write data.");
 
         const url = `https://api.github.com/repos/${repo}/contents/${path}`;
+        
+        // AUTO-FETCH LIVE SHA BEFORE COMMITTING TO PREVENT 'sha wasn't supplied'
+        let currentSha = APP_STATE.fileSha;
+        try {
+          const checkRes = await fetch(url, {
+            headers: {
+              'Authorization': `token ${token}`,
+              'Accept': 'application/vnd.github.v3+json'
+            },
+            cache: 'no-store'
+          });
+          if (checkRes.ok) {
+            const checkJson = await checkRes.json();
+            currentSha = checkJson.sha;
+            APP_STATE.fileSha = currentSha;
+            localStorage.setItem('sgm_file_sha', currentSha);
+          }
+        } catch (e) {
+          console.warn("Could not pre-fetch sha, attempting cached sha:", e);
+        }
+
         const utf8Content = btoa(unescape(encodeURIComponent(JSON.stringify(dataPayload, null, 2))));
 
         const bodyData = {
           message: `SGM Rx Update: ${new Date().toISOString()}`,
           content: utf8Content
         };
-        if (APP_STATE.fileSha) bodyData.sha = APP_STATE.fileSha;
+        if (currentSha) {
+          bodyData.sha = currentSha;
+        }
 
         const res = await fetch(url, {
           method: 'PUT',
@@ -866,8 +891,8 @@
       `;
 
       try {
-        if (!patientId || !accessKey) {
-          throw new Error("Invalid link: Missing Patient ID or Access Key.");
+        if (!patientId) {
+          throw new Error("Invalid link: Missing Patient ID.");
         }
 
         const repo = repoParam || APP_STATE.config.repo;
@@ -875,16 +900,37 @@
         
         const records = (remote && remote.data) ? (remote.data.records || remote.data.patients || {}) : {};
         if (!records[patientId]) {
-          throw new Error("Patient record not found in repository database.");
+          throw new Error(`Record for ${patientId} not found in database.`);
         }
 
         const cipherObj = records[patientId];
-        const patientData = await CryptoEngine.decrypt(cipherObj, accessKey);
+        let patientData = null;
+
+        if (accessKey) {
+          try {
+            patientData = await CryptoEngine.decrypt(cipherObj, accessKey);
+          } catch (e) {}
+        }
+
+        if (!patientData && APP_STATE.config.pass) {
+          try {
+            patientData = await CryptoEngine.decrypt(cipherObj, APP_STATE.config.pass);
+          } catch (e) {}
+        }
+
+        if (!patientData && APP_STATE.patientKeys[patientId]) {
+          try {
+            patientData = await CryptoEngine.decrypt(cipherObj, APP_STATE.patientKeys[patientId]);
+          } catch (e) {}
+        }
+
+        if (!patientData) {
+          throw new Error("Yeh record purani Master Key se lock hai. Store par jakar ise 'Edit -> Save' karein taaki naya patient link ban sake.");
+        }
 
         const activeMeds = (patientData.medicines || []).filter(m => !m.discontinued);
 
         root.innerHTML = `
-          <!-- PROMINENT PATIENT HEADER CARD -->
           <div class="bg-gradient-to-r from-teal-700 to-brand-800 text-white rounded-2xl p-5 shadow-sm mb-4">
             <div class="flex justify-between items-center pb-2.5 border-b border-white/20">
               <span class="text-xs font-mono font-extrabold bg-white/20 px-2.5 py-1 rounded-lg tracking-wider">
@@ -915,9 +961,9 @@
         root.innerHTML = `
           <div class="bg-white p-6 rounded-2xl border border-red-200 text-center space-y-3 shadow-2xs">
             <i class="fa-solid fa-triangle-exclamation text-3xl text-red-500"></i>
-            <h3 class="text-sm font-bold text-slate-800">Decryption Failed / Record Not Found</h3>
+            <h3 class="text-sm font-bold text-slate-800">Decryption / Access Error</h3>
             <p class="text-xs text-red-600 font-medium">${err.message}</p>
-            <p class="text-[11px] text-slate-500">Kripya store se naya QR code ya link check karwayein.</p>
+            <p class="text-[11px] text-slate-500 mt-2">Counter par dashboard open karke patient ko ek bar 'Edit -> Save' karein taaki link re-sync ho jaye.</p>
           </div>
         `;
       }
@@ -1104,7 +1150,7 @@
       renderAdminDashboard();
 
       if (APP_STATE.config.token && APP_STATE.config.pass) {
-        saveToGitHubCloud();
+        await saveToGitHubCloud();
       }
     }
 
@@ -1239,7 +1285,7 @@
       renderAdminPatientView(p.id);
 
       if (APP_STATE.config.token && APP_STATE.config.pass) {
-        saveToGitHubCloud();
+        await saveToGitHubCloud();
       }
     }
 
@@ -1273,7 +1319,14 @@
       const canvas = document.getElementById('qrcodeCanvas');
       canvas.innerHTML = '';
 
-      const accessKey = p.accessKey || APP_STATE.patientKeys[patientId];
+      let accessKey = p.accessKey || APP_STATE.patientKeys[patientId];
+      if (!accessKey) {
+        accessKey = CryptoEngine.generateKey(24);
+        p.accessKey = accessKey;
+        APP_STATE.patientKeys[patientId] = accessKey;
+        saveLocalData();
+      }
+
       const baseAppUrl = window.location.href.split('#')[0];
       const shareUrl = `${baseAppUrl}#/view?id=${p.id}&k=${accessKey}&repo=${encodeURIComponent(APP_STATE.config.repo)}`;
 
@@ -1303,7 +1356,6 @@
 
     // ==========================================
     // 9. DUAL BACKWARD-COMPATIBLE CLOUD SYNC
-    // EXACT MATCH FOR `records`, `salt`, `iv`, `data`
     // ==========================================
     async function manualSync(silent = false) {
       const spinner = document.getElementById('syncSpinner');
@@ -1322,7 +1374,6 @@
 
         const remote = await GitHubSync.pullRemoteData();
         if (remote && remote.data) {
-          // Exactly read records OR patients from GitHub JSON
           const cloudRecords = remote.data.records || remote.data.patients || {};
           const cloudKeyReg = remote.data.keyRegistry;
 
@@ -1341,7 +1392,7 @@
             const cipherObj = cloudRecords[id];
             let decryptedPatient = null;
 
-            // Strategy A: Individual key se
+            // Strategy A: Individual key
             const pKey = APP_STATE.patientKeys[id];
             if (pKey) {
               try {
@@ -1349,7 +1400,7 @@
               } catch (e) {}
             }
 
-            // Strategy B: Master Key se (Direct unlock of existing entries)
+            // Strategy B: Master Key (Direct unlock)
             if (!decryptedPatient) {
               try {
                 decryptedPatient = await CryptoEngine.decrypt(cipherObj, pass);
@@ -1390,11 +1441,14 @@
 
         for (let id in APP_STATE.patients) {
           const p = APP_STATE.patients[id];
-          const pKey = p.accessKey || APP_STATE.patientKeys[id];
-          if (pKey) {
-            const encPayload = await CryptoEngine.encrypt(p, pKey);
-            cloudJson.records[id] = encPayload;
+          let pKey = p.accessKey || APP_STATE.patientKeys[id];
+          if (!pKey) {
+            pKey = CryptoEngine.generateKey(24);
+            p.accessKey = pKey;
+            APP_STATE.patientKeys[id] = pKey;
           }
+          const encPayload = await CryptoEngine.encrypt(p, pKey);
+          cloudJson.records[id] = encPayload;
         }
 
         const encKeyReg = await CryptoEngine.encrypt(APP_STATE.patientKeys, pass);
@@ -1402,7 +1456,7 @@
         cloudJson.updated_at = new Date().toISOString();
 
         await GitHubSync.pushRemoteData(cloudJson);
-        console.log("GitHub sync successful.");
+        showToast("GitHub Live Sync Successful! ✅");
       } catch (err) {
         console.error("Cloud push failed:", err);
         showToast("Cloud sync failed: " + err.message);
