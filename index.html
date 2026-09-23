@@ -408,25 +408,26 @@
         </div>
 
         <div>
-          <label class="block font-bold text-slate-700 mb-1">Time of Day (Kab Kab Lena Hai) *</label>
+          <label class="block font-bold text-slate-700 mb-1">Slot Quantities (Kitni Matra Kis Time Leni Hai)</label>
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-            <label class="flex items-center space-x-2 p-2 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 has-[:checked]:bg-amber-50 has-[:checked]:border-amber-300">
-              <input type="checkbox" id="mfMorn" class="rounded text-brand-600">
-              <span class="font-bold text-amber-900">🌅 Subah</span>
-            </label>
-            <label class="flex items-center space-x-2 p-2 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 has-[:checked]:bg-sky-50 has-[:checked]:border-sky-300">
-              <input type="checkbox" id="mfNoon" class="rounded text-brand-600">
-              <span class="font-bold text-sky-900">☀️ Dupahar</span>
-            </label>
-            <label class="flex items-center space-x-2 p-2 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 has-[:checked]:bg-orange-50 has-[:checked]:border-orange-300">
-              <input type="checkbox" id="mfEve" class="rounded text-brand-600">
-              <span class="font-bold text-orange-900">🌇 Shaam</span>
-            </label>
-            <label class="flex items-center space-x-2 p-2 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-50 has-[:checked]:bg-indigo-50 has-[:checked]:border-indigo-300">
-              <input type="checkbox" id="mfNight" class="rounded text-brand-600">
-              <span class="font-bold text-indigo-900">🌙 Raat</span>
-            </label>
+            <div class="p-2 border border-slate-200 rounded-xl bg-amber-50/50">
+              <label class="block text-[10px] font-bold text-amber-900 mb-1">🌅 Subah Qty</label>
+              <input type="number" id="mfMornQty" step="0.25" min="0" value="0" class="w-full px-2 py-1 text-xs rounded-lg border border-amber-200 bg-white focus:outline-none focus:ring-1 focus:ring-amber-400">
+            </div>
+            <div class="p-2 border border-slate-200 rounded-xl bg-sky-50/50">
+              <label class="block text-[10px] font-bold text-sky-900 mb-1">☀️ Dupahar Qty</label>
+              <input type="number" id="mfNoonQty" step="0.25" min="0" value="0" class="w-full px-2 py-1 text-xs rounded-lg border border-sky-200 bg-white focus:outline-none focus:ring-1 focus:ring-sky-400">
+            </div>
+            <div class="p-2 border border-slate-200 rounded-xl bg-orange-50/50">
+              <label class="block text-[10px] font-bold text-orange-900 mb-1">🌇 Shaam Qty</label>
+              <input type="number" id="mfEveQty" step="0.25" min="0" value="0" class="w-full px-2 py-1 text-xs rounded-lg border border-orange-200 bg-white focus:outline-none focus:ring-1 focus:ring-orange-400">
+            </div>
+            <div class="p-2 border border-slate-200 rounded-xl bg-indigo-50/50">
+              <label class="block text-[10px] font-bold text-indigo-900 mb-1">🌙 Raat Qty</label>
+              <input type="number" id="mfNightQty" step="0.25" min="0" value="0" class="w-full px-2 py-1 text-xs rounded-lg border border-indigo-200 bg-white focus:outline-none focus:ring-1 focus:ring-indigo-400">
+            </div>
           </div>
+          <p class="text-[10px] text-slate-400 mt-1">Total per day is automatically calculated from these slot quantities.</p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -451,15 +452,9 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Quantity in Strip (Stock)</label>
-            <input type="number" id="mfQty" min="0" placeholder="e.g. 30" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
-          </div>
-          <div>
-            <label class="block font-bold text-slate-700 mb-1">Total Dose Per Day</label>
-            <input type="number" id="mfPerDay" step="0.5" min="0.5" value="1" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
-          </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Total Quantity in Strip / Stock (Tabs)</label>
+          <input type="number" id="mfQty" min="0" placeholder="e.g. 30" class="w-full px-3 py-2 rounded-xl border border-slate-200 focus:ring-2 focus:ring-brand-500/20 focus:outline-none">
         </div>
 
         <!-- Dose Alteration Notice (Shown if modifying an existing medicine) -->
@@ -712,7 +707,6 @@
           let patientRecord = this.state.patients[pid];
 
           if (!patientRecord && cfg.repo) {
-            // Fetch direct public data.json from GitHub contents or Raw without token!
             const rawUrl = `https://raw.githubusercontent.com/${cfg.repo}/main/${cfg.path}?t=${Date.now()}`;
             const res = await fetch(rawUrl);
             if (res.ok) {
@@ -794,10 +788,15 @@
         const filter = this.state.activeFilter;
 
         const filtered = meds.filter(m => {
-          if (filter === 'morning') return m.morn;
-          if (filter === 'afternoon') return m.noon;
-          if (filter === 'evening') return m.eve;
-          if (filter === 'night') return m.night;
+          const mq = m.mornQty !== undefined ? m.mornQty : (m.morn ? 1 : 0);
+          const nq = m.noonQty !== undefined ? m.noonQty : (m.noon ? 1 : 0);
+          const eq = m.eveQty !== undefined ? m.eveQty : (m.eve ? 1 : 0);
+          const nq_night = m.nightQty !== undefined ? m.nightQty : (m.night ? 1 : 0);
+
+          if (filter === 'morning') return mq > 0;
+          if (filter === 'afternoon') return nq > 0;
+          if (filter === 'evening') return eq > 0;
+          if (filter === 'night') return nq_night > 0;
           return true;
         });
 
@@ -812,7 +811,12 @@
         }
 
         container.innerHTML = filtered.map((m, idx) => {
-          const perDay = m.perDay || 1;
+          const mq = m.mornQty !== undefined ? m.mornQty : (m.morn ? 1 : 0);
+          const nq = m.noonQty !== undefined ? m.noonQty : (m.noon ? 1 : 0);
+          const eq = m.eveQty !== undefined ? m.eveQty : (m.eve ? 1 : 0);
+          const nq_night = m.nightQty !== undefined ? m.nightQty : (m.night ? 1 : 0);
+
+          const perDay = m.perDay || (mq + nq + eq + nq_night);
           const daysLeft = Math.max(0, Math.floor((m.stockQty || 0) / perDay));
           const isLow = daysLeft <= 4;
 
@@ -839,12 +843,12 @@
                 </div>
               </div>
 
-              <!-- Dose Time Badges -->
+              <!-- Dose Time Quantities Badges -->
               <div class="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-slate-100">
-                ${m.morn ? '<span class="px-2 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold flex items-center"><i class="fa-solid fa-sun text-amber-500 mr-1.5"></i>Subah (Morning)</span>' : ''}
-                ${m.noon ? '<span class="px-2 py-1 rounded-lg bg-sky-50 text-sky-900 border border-sky-200 text-xs font-bold flex items-center"><i class="fa-solid fa-cloud-sun text-sky-500 mr-1.5"></i>Dupahar (Afternoon)</span>' : ''}
-                ${m.eve ? '<span class="px-2 py-1 rounded-lg bg-orange-50 text-orange-900 border border-orange-200 text-xs font-bold flex items-center"><i class="fa-solid fa-sunset text-orange-500 mr-1.5"></i>Shaam (Evening)</span>' : ''}
-                ${m.night ? '<span class="px-2 py-1 rounded-lg bg-indigo-50 text-indigo-900 border border-indigo-200 text-xs font-bold flex items-center"><i class="fa-solid fa-moon text-indigo-500 mr-1.5"></i>Raat (Night)</span>' : ''}
+                ${mq > 0 ? `<span class="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-900 border border-amber-200 text-xs font-bold flex items-center"><i class="fa-solid fa-sun text-amber-500 mr-1.5"></i>Subah: ${mq}</span>` : ''}
+                ${nq > 0 ? `<span class="px-2.5 py-1 rounded-lg bg-sky-50 text-sky-900 border border-sky-200 text-xs font-bold flex items-center"><i class="fa-solid fa-cloud-sun text-sky-500 mr-1.5"></i>Dupahar: ${nq}</span>` : ''}
+                ${eq > 0 ? `<span class="px-2.5 py-1 rounded-lg bg-orange-50 text-orange-900 border border-orange-200 text-xs font-bold flex items-center"><i class="fa-solid fa-sunset text-orange-500 mr-1.5"></i>Shaam: ${eq}</span>` : ''}
+                ${nq_night > 0 ? `<span class="px-2.5 py-1 rounded-lg bg-indigo-50 text-indigo-900 border border-indigo-200 text-xs font-bold flex items-center"><i class="fa-solid fa-moon text-indigo-500 mr-1.5"></i>Raat: ${nq_night}</span>` : ''}
               </div>
             </div>
           `;
@@ -984,7 +988,12 @@
           (p.medicines || []).forEach(m => {
             if (!m.discontinued) {
               totalMeds++;
-              const days = Math.floor((m.stockQty || 0) / (m.perDay || 1));
+              const mq = m.mornQty !== undefined ? m.mornQty : (m.morn ? 1 : 0);
+              const nq = m.noonQty !== undefined ? m.noonQty : (m.noon ? 1 : 0);
+              const eq = m.eveQty !== undefined ? m.eveQty : (m.eve ? 1 : 0);
+              const nq_night = m.nightQty !== undefined ? m.nightQty : (m.night ? 1 : 0);
+              const perDay = m.perDay || (mq + nq + eq + nq_night) || 1;
+              const days = Math.floor((m.stockQty || 0) / perDay);
               if (days <= 4) refillAlerts++;
             }
           });
@@ -1076,7 +1085,6 @@
         this.updateAdminMetrics();
         this.showToast('Patient record saved locally');
 
-        // Trigger Live Sync if connected
         if (this.state.config.token) {
           await this.pushToGitHub();
         }
@@ -1104,14 +1112,14 @@
         document.getElementById('medModalTitle').innerText = 'Modify Dose / Strength';
 
         document.getElementById('mfName').value = m.name;
-        document.getElementById('mfMorn').checked = !!m.morn;
-        document.getElementById('mfNoon').checked = !!m.noon;
-        document.getElementById('mfEve').checked = !!m.eve;
-        document.getElementById('mfNight').checked = !!m.night;
+        document.getElementById('mfMornQty').value = m.mornQty !== undefined ? m.mornQty : (m.morn ? 1 : 0);
+        document.getElementById('mfNoonQty').value = m.noonQty !== undefined ? m.noonQty : (m.noon ? 1 : 0);
+        document.getElementById('mfEveQty').value = m.eveQty !== undefined ? m.eveQty : (m.eve ? 1 : 0);
+        document.getElementById('mfNightQty').value = m.nightQty !== undefined ? m.nightQty : (m.night ? 1 : 0);
+
         document.getElementById('mfMeal').value = m.meal || 'after';
         document.getElementById('mfType').value = m.type || 'Tablet';
         document.getElementById('mfQty').value = m.stockQty || 0;
-        document.getElementById('mfPerDay').value = m.perDay || 1;
 
         document.getElementById('mfReasonContainer').classList.remove('hidden');
         document.getElementById('mfReason').value = '';
@@ -1134,16 +1142,22 @@
         const p = this.state.patients[pid];
         if (!p) return;
 
+        const mornQty = parseFloat(document.getElementById('mfMornQty').value) || 0;
+        const noonQty = parseFloat(document.getElementById('mfNoonQty').value) || 0;
+        const eveQty = parseFloat(document.getElementById('mfEveQty').value) || 0;
+        const nightQty = parseFloat(document.getElementById('mfNightQty').value) || 0;
+        const perDay = mornQty + noonQty + eveQty + nightQty;
+
         const medObj = {
           name: document.getElementById('mfName').value.trim(),
-          morn: document.getElementById('mfMorn').checked,
-          noon: document.getElementById('mfNoon').checked,
-          eve: document.getElementById('mfEve').checked,
-          night: document.getElementById('mfNight').checked,
+          mornQty: mornQty,
+          noonQty: noonQty,
+          eveQty: eveQty,
+          nightQty: nightQty,
+          perDay: perDay > 0 ? perDay : 1,
           meal: document.getElementById('mfMeal').value,
           type: document.getElementById('mfType').value,
           stockQty: parseFloat(document.getElementById('mfQty').value) || 0,
-          perDay: parseFloat(document.getElementById('mfPerDay').value) || 1,
           discontinued: false
         };
 
@@ -1296,13 +1310,11 @@
         text.innerText = 'Syncing...';
 
         try {
-          // 1. Pull Remote
           const remote = await GitHubSync.pullRemoteDatabase(cfg);
           if (remote) {
             this.state.currentSha = remote.sha;
             const records = remote.payload.records || {};
 
-            // If we have master password, decrypt records
             if (cfg.pass) {
               for (const pid in records) {
                 try {
@@ -1315,7 +1327,6 @@
             }
           }
 
-          // 2. If we have token, push our local state to ensure both are synchronized
           if (cfg.token && cfg.pass) {
             await this.pushToGitHub();
           }
@@ -1338,11 +1349,9 @@
         const cfg = this.state.config;
         if (!cfg.token || !cfg.repo || !cfg.pass) return;
 
-        // Encrypt each patient before pushing
         const encryptedRecords = {};
         for (const pid in this.state.patients) {
           const patientObj = this.state.patients[pid];
-          // Encrypt with Master Passphrase so Admin can pull
           encryptedRecords[pid] = await CryptoEngine.encryptObject(patientObj, cfg.pass);
         }
 
@@ -1365,7 +1374,6 @@
           if (banner) banner.classList.remove('hidden');
         });
 
-        // Register in-memory manifest blob
         const manifestObj = {
           name: "SGM Patient Rx Hub",
           short_name: "SGM Rx",
@@ -1388,7 +1396,6 @@
         link.href = manifestUrl;
         document.head.appendChild(link);
 
-        // Register in-memory service worker
         if ('serviceWorker' in navigator) {
           const swCode = `
             const CACHE_NAME = 'sgm-rx-cache-v1';
