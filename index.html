@@ -155,7 +155,6 @@
 
       <form onsubmit="handleMedicineFormSubmit(event)" class="mt-4 space-y-3.5 text-xs">
         <input type="hidden" id="medEditIndex" value="-1">
-        <input type="hidden" id="medExistingStartDate" value="">
 
         <div>
           <label class="block font-semibold text-slate-600 mb-1">Medicine Name & Strength *</label>
@@ -207,19 +206,25 @@
           </div>
         </div>
 
+        <!-- NEW VISIBLE START DATE SELECTOR -->
         <div class="grid grid-cols-2 gap-2.5">
           <div>
-            <label class="block font-semibold text-slate-600 mb-1">Meal Relation</label>
-            <select id="mMeal" class="w-full px-3 py-2 border rounded-lg bg-white text-xs">
-              <option value="after">🍽️ Khaane Ke Baad</option>
-              <option value="before">🥣 Khaane Se Pehle</option>
-              <option value="with">🥗 Khaate Waqt</option>
-            </select>
+            <label class="block font-semibold text-slate-600 mb-1">📅 Medicine Start / Issue Date *</label>
+            <input type="date" id="mStartDate" required class="w-full px-3 py-2 border rounded-lg bg-white text-xs font-medium">
           </div>
           <div>
-            <label class="block font-semibold text-slate-600 mb-1">Current Stock (Total Tabs) *</label>
-            <input type="number" id="mTotalQty" required min="0" step="1" placeholder="e.g. 30" class="w-full px-3 py-2 border rounded-lg text-xs font-bold">
+            <label class="block font-semibold text-slate-600 mb-1">Total Stock (Tablets) *</label>
+            <input type="number" id="mTotalQty" required min="1" step="1" placeholder="e.g. 30" class="w-full px-3 py-2 border rounded-lg text-xs font-bold">
           </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">Meal Relation</label>
+          <select id="mMeal" class="w-full px-3 py-2 border rounded-lg bg-white text-xs">
+            <option value="after">🍽️ Khaane Ke Baad</option>
+            <option value="before">🥣 Khaane Se Pehle</option>
+            <option value="with">🥗 Khaate Waqt</option>
+          </select>
         </div>
 
         <div>
@@ -451,9 +456,16 @@
       if (perDay <= 0) perDay = 1;
 
       const totalInitial = parseFloat(m.initialQty !== undefined ? m.initialQty : (m.qty || 0));
-      const startTimestamp = m.startDate || m.lastRefillDate || patientCreatedDate || Date.now();
-      const now = Date.now();
 
+      // Parse start date accurately (from YYYY-MM-DD or timestamp)
+      let startTimestamp = Date.now();
+      if (m.startDate) {
+        startTimestamp = typeof m.startDate === 'string' ? new Date(m.startDate).getTime() : m.startDate;
+      } else if (patientCreatedDate) {
+        startTimestamp = patientCreatedDate;
+      }
+
+      const now = Date.now();
       const elapsedDays = Math.max(0, Math.floor((now - startTimestamp) / (1000 * 60 * 60 * 24)));
       const consumedTabs = elapsedDays * perDay;
 
@@ -690,7 +702,10 @@
             <div class="flex justify-between items-start">
               <div>
                 <h4 class="text-sm font-bold text-slate-900">${m.name}</h4>
-                <span class="text-[10px] font-semibold text-slate-500">🍽️ ${m.meal === 'before' ? 'Khaane Se Pehle' : 'Khaane Ke Baad'}</span>
+                <p class="text-[10px] text-slate-500 mt-0.5">
+                  <span>🍽️ ${m.meal === 'before' ? 'Khaane Se Pehle' : 'Khaane Ke Baad'}</span>
+                  <span> • 📅 Shuru: <b>${m.startDate ? (typeof m.startDate === 'string' ? m.startDate : new Date(m.startDate).toISOString().slice(0, 10)) : 'N/A'}</b></span>
+                </p>
               </div>
               ${!isReadOnly ? `
                 <div class="flex items-center gap-1">
@@ -806,13 +821,15 @@
 
     function openMedModal() {
       document.getElementById('medEditIndex').value = '-1';
-      document.getElementById('medExistingStartDate').value = '';
       document.getElementById('mName').value = '';
       document.getElementById('mornCheck').checked = false;
       document.getElementById('noonCheck').checked = false;
       document.getElementById('eveCheck').checked = false;
       document.getElementById('nightCheck').checked = false;
       toggleDoseQty('morn'); toggleDoseQty('noon'); toggleDoseQty('eve'); toggleDoseQty('night');
+      
+      // Default start date to Today's date (YYYY-MM-DD)
+      document.getElementById('mStartDate').value = new Date().toISOString().slice(0, 10);
       document.getElementById('mMeal').value = 'after';
       document.getElementById('mTotalQty').value = '30';
       document.getElementById('mInstructions').value = '';
@@ -827,7 +844,16 @@
       const m = p.medicines[idx];
 
       document.getElementById('medEditIndex').value = idx;
-      document.getElementById('medExistingStartDate').value = m.startDate || '';
+      
+      // Format existing startDate to YYYY-MM-DD for datepicker
+      let startDateStr = new Date().toISOString().slice(0, 10);
+      if (m.startDate) {
+        startDateStr = typeof m.startDate === 'string' && m.startDate.includes('-') 
+          ? m.startDate 
+          : new Date(m.startDate).toISOString().slice(0, 10);
+      }
+      document.getElementById('mStartDate').value = startDateStr;
+
       document.getElementById('mName').value = m.name;
       document.getElementById('mornCheck').checked = !!m.morn;
       document.getElementById('mornQty').value = m.mornQty || 1;
@@ -865,9 +891,9 @@
       e.preventDefault();
       const p = APP_STATE.patients[APP_STATE.currentPatientId];
       const editIdx = parseInt(document.getElementById('medEditIndex').value);
-      const existingStartDate = document.getElementById('medExistingStartDate').value;
       const isRevisedChecked = document.getElementById('isDoctorRevised').checked;
       const enteredQty = parseFloat(document.getElementById('mTotalQty').value) || 0;
+      const chosenStartDate = document.getElementById('mStartDate').value || new Date().toISOString().slice(0, 10);
 
       const medData = {
         name: document.getElementById('mName').value.trim(),
@@ -882,7 +908,7 @@
         meal: document.getElementById('mMeal').value,
         initialQty: enteredQty,
         qty: enteredQty,
-        startDate: (editIdx > -1 && existingStartDate && !isRevisedChecked) ? parseInt(existingStartDate, 10) : Date.now(),
+        startDate: chosenStartDate,
         instructions: document.getElementById('mInstructions').value.trim(),
         discontinued: false,
         history: []
@@ -895,10 +921,8 @@
         if (isRevisedChecked) {
           medData.history = old.history || [];
           medData.history.unshift({ date: new Date().toLocaleDateString(), reason: document.getElementById('mChangeReason').value.trim() || 'Dose revised' });
-          medData.startDate = Date.now();
         } else {
           medData.history = old.history || [];
-          if (old.initialQty !== enteredQty) medData.startDate = Date.now();
         }
         p.medicines[editIdx] = medData;
       } else {
@@ -1033,7 +1057,7 @@
         cloudJson.updated_at = new Date().toISOString();
 
         await GitHubSync.pushRemoteData(cloudJson);
-        showToast("Cloud sync successful! ✅");
+        showToast("GitHub Live Sync Successful! ✅");
       } catch (err) {
         showToast("Cloud sync error: " + err.message);
       }
@@ -1043,11 +1067,21 @@
       const patients = Object.values(APP_STATE.patients || {});
       if (patients.length === 0) return alert("No patient data!");
 
-      const rows = [["Patient ID", "Name", "Phone", "Doctor", "Medicine", "Live Stock", "Per Day", "Days Left"]];
+      const rows = [["Patient ID", "Name", "Phone", "Doctor", "Medicine", "Start Date", "Live Stock", "Per Day", "Days Left"]];
       patients.forEach(p => {
         (p.medicines || []).forEach(m => {
           const stats = calculateLiveMedStats(m, p.created || p.lastUpdated);
-          rows.push([`"${p.id}"`, `"${p.name}"`, `"${p.phone}"`, `"${p.doctor || ''}"`, `"${m.name}"`, `"${stats.remainingTabs}"`, `"${stats.perDay}"`, `"${stats.daysLeft}"`]);
+          rows.push([
+            `"${p.id}"`, 
+            `"${p.name}"`, 
+            `"${p.phone}"`, 
+            `"${p.doctor || ''}"`, 
+            `"${m.name}"`, 
+            `"${m.startDate || ''}"`,
+            `"${stats.remainingTabs}"`, 
+            `"${stats.perDay}"`, 
+            `"${stats.daysLeft}"`
+          ]);
         });
       });
 
