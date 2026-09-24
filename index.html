@@ -411,7 +411,7 @@
     };
 
     // ==========================================
-    // 3. GITHUB API LIVE SYNC (AUTO SHA MANAGEMENT)
+    // 3. GITHUB API LIVE SYNC (AUTO SHA HANDLER)
     // ==========================================
     const GitHubSync = {
       async pullRemoteData(targetRepo = null) {
@@ -476,7 +476,6 @@
 
         const url = `https://api.github.com/repos/${repo}/contents/${path}`;
         
-        // AUTO-FETCH LIVE SHA BEFORE COMMITTING TO PREVENT 'sha wasn't supplied'
         let currentSha = APP_STATE.fileSha;
         try {
           const checkRes = await fetch(url, {
@@ -492,9 +491,7 @@
             APP_STATE.fileSha = currentSha;
             localStorage.setItem('sgm_file_sha', currentSha);
           }
-        } catch (e) {
-          console.warn("Could not pre-fetch sha, attempting cached sha:", e);
-        }
+        } catch (e) {}
 
         const utf8Content = btoa(unescape(encodeURIComponent(JSON.stringify(dataPayload, null, 2))));
 
@@ -686,68 +683,96 @@
     });
 
     // ==========================================
-    // 6. VIEW RENDERING
+    // 6. VIEW RENDERING (DAILY STOCK REMAINING INCLUDED)
     // ==========================================
     function renderAdminDashboard() {
       const root = document.getElementById('viewRoot');
       const patients = Object.values(APP_STATE.patients);
 
-      const criticalRefills = [];
+      // Collect ALL active medicines with days calculation
+      const allActiveMedications = [];
       patients.forEach(p => {
         (p.medicines || []).forEach(m => {
           if (!m.discontinued) {
             const perDay = calculateTotalPerDay(m);
             const daysLeft = perDay > 0 ? Math.floor(m.qty / perDay) : 999;
-            if (daysLeft <= 3) {
-              criticalRefills.push({
-                patientId: p.id,
-                patientName: p.name,
-                patientPhone: p.phone,
-                medName: m.name,
-                qty: m.qty,
-                daysLeft: daysLeft
-              });
-            }
+            allActiveMedications.push({
+              patientId: p.id,
+              patientName: p.name,
+              patientPhone: p.phone,
+              medName: m.name,
+              qty: m.qty,
+              perDay: perDay,
+              daysLeft: daysLeft
+            });
           }
         });
       });
 
-      let refillHtml = '';
-      if (criticalRefills.length > 0) {
-        refillHtml = `
-          <div class="mb-5 bg-rose-50 border-2 border-rose-300 rounded-2xl p-4 shadow-sm">
-            <div class="flex items-center justify-between pb-2 border-b border-rose-200 mb-3">
-              <h3 class="text-xs font-bold text-rose-900 uppercase tracking-wide flex items-center gap-1.5">
-                <i class="fa-solid fa-triangle-exclamation text-rose-600 animate-pulse text-sm"></i> 
-                Refill Due Alerts (≤ 3 Days Left)
+      // Sort by least days left on top
+      allActiveMedications.sort((a, b) => a.daysLeft - b.daysLeft);
+
+      let dailyStockHtml = '';
+      if (allActiveMedications.length > 0) {
+        dailyStockHtml = `
+          <div class="mb-5 bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+            <div class="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-3">
+              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
+                <i class="fa-solid fa-hourglass-half text-brand-600"></i> 
+                Daily Stock & Refill Tracker (${allActiveMedications.length} Medicines)
               </h3>
-              <span class="text-[11px] font-bold bg-rose-200 text-rose-900 px-2 py-0.5 rounded-full">${criticalRefills.length} Due</span>
+              <span class="text-[10px] text-slate-400 font-medium">Bache Hue Din</span>
             </div>
-            <div class="space-y-2.5 max-h-64 overflow-y-auto pr-1">
-              ${criticalRefills.map(r => `
-                <div class="bg-white p-3 rounded-xl border border-rose-200 flex items-center justify-between shadow-2xs">
-                  <div>
-                    <div class="text-xs font-bold text-slate-800">${r.patientName} <span class="text-[10px] text-slate-400">(${r.patientId})</span></div>
-                    <div class="text-[11px] font-semibold text-rose-700">${r.medName}</div>
-                    <div class="text-[10px] text-slate-500 font-medium">Bachi hui: <b>${r.qty} tabs</b> (~${r.daysLeft} din baaki)</div>
+            
+            <div class="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+              ${allActiveMedications.map(r => {
+                let badgeClass = "bg-emerald-50 border-emerald-200 text-emerald-800";
+                let badgeText = `✅ ${r.daysLeft} din bachi hai`;
+                
+                if (r.daysLeft <= 3) {
+                  badgeClass = "bg-rose-50 border-rose-300 text-rose-800 animate-pulse";
+                  badgeText = `🚨 Sirf ${r.daysLeft} din bache!`;
+                } else if (r.daysLeft <= 7) {
+                  badgeClass = "bg-amber-50 border-amber-300 text-amber-800";
+                  badgeText = `⚠️ ~${r.daysLeft} din bache`;
+                }
+
+                return `
+                  <div class="bg-slate-50 hover:bg-white p-3 rounded-xl border border-slate-200 transition-all flex items-center justify-between shadow-2xs">
+                    <div class="space-y-0.5">
+                      <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <span>${r.patientName}</span>
+                        <span class="text-[10px] font-mono text-slate-400">(${r.patientId})</span>
+                      </div>
+                      <div class="text-[11px] font-semibold text-brand-700">${r.medName}</div>
+                      <div class="text-[10px] text-slate-500 font-medium">
+                        Total Stock: <b>${r.qty} tabs</b> • Dose: <b>${r.perDay} tab/day</b>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                      <span class="text-[10px] font-bold px-2 py-1 rounded-lg border ${badgeClass}">
+                        ${badgeText}
+                      </span>
+                      <div class="flex items-center gap-1">
+                        <a href="tel:${r.patientPhone}" class="w-7 h-7 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center text-xs" title="Call Patient">
+                          <i class="fa-solid fa-phone"></i>
+                        </a>
+                        <a href="https://wa.me/91${r.patientPhone}?text=${encodeURIComponent(`Namaste ${r.patientName} ji,\nShree Ganesh Medicals se reminder:\nAapki dawai *${r.medName}* ka stock lagbhag *${r.daysLeft} din* ka bacha hai (${r.qty} tabs baaki).\nKripya samay par regular refill kara lein.`)}" target="_blank" class="w-7 h-7 rounded-lg bg-[#25D366] hover:bg-[#20ba5a] text-white flex items-center justify-center text-xs" title="WhatsApp Reminder">
+                          <i class="fa-brands fa-whatsapp"></i>
+                        </a>
+                      </div>
+                    </div>
                   </div>
-                  <div class="flex items-center gap-1.5">
-                    <a href="tel:${r.patientPhone}" class="w-8 h-8 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center text-xs" title="Call Patient">
-                      <i class="fa-solid fa-phone"></i>
-                    </a>
-                    <a href="https://wa.me/91${r.patientPhone}?text=${encodeURIComponent(`Namaste ${r.patientName} ji,\nShree Ganesh Medicals se reminder:\nAapki dawai *${r.medName}* sirf *${r.daysLeft} din* ki bachi hai (${r.qty} tabs baaki).\nKripya regular dose ke liye samay par refill kara lein.`)}" target="_blank" class="w-8 h-8 rounded-lg bg-[#25D366] hover:bg-[#20ba5a] text-white flex items-center justify-center text-xs" title="WhatsApp Reminder">
-                      <i class="fa-brands fa-whatsapp text-sm"></i>
-                    </a>
-                  </div>
-                </div>
-              `).join('')}
+                `;
+              }).join('')}
             </div>
           </div>
         `;
       }
 
       root.innerHTML = `
-        ${refillHtml}
+        ${dailyStockHtml}
 
         <div class="flex items-center justify-between mb-4">
           <div>
@@ -1021,7 +1046,7 @@
 
             <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
               <span class="text-slate-500 font-medium">Bachi hui: <b>${m.qty} tabs</b></span>
-              <span class="font-bold px-2 py-0.5 rounded-md ${daysLeft <= 3 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-50 text-emerald-700'}">
+              <span class="font-bold px-2 py-0.5 rounded-md ${daysLeft <= 3 ? 'bg-rose-100 text-rose-800' : (daysLeft <= 7 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700')}">
                 ${daysLeft <= 3 ? `🚨 Refill in ${daysLeft} din` : `✅ ~${daysLeft} din ka dose`}
               </span>
             </div>
@@ -1392,7 +1417,6 @@
             const cipherObj = cloudRecords[id];
             let decryptedPatient = null;
 
-            // Strategy A: Individual key
             const pKey = APP_STATE.patientKeys[id];
             if (pKey) {
               try {
@@ -1400,7 +1424,6 @@
               } catch (e) {}
             }
 
-            // Strategy B: Master Key (Direct unlock)
             if (!decryptedPatient) {
               try {
                 decryptedPatient = await CryptoEngine.decrypt(cipherObj, pass);
