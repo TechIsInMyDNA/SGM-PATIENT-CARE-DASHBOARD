@@ -5,41 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SGM Patient Care & Rx Timeline</title>
   <meta name="theme-color" content="#0d9488">
-  <meta name="description" content="Shree Ganesh Medicals Patient Medication Timeline & Digital Pass">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💊</text></svg>">
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script>
-    tailwind.config = {
-      darkMode: 'class',
-      theme: {
-        extend: {
-          colors: {
-            brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 700: '#0f766e', 800: '#115e59' },
-            morning: { bg: '#fef3c7', text: '#92400e', border: '#fde68a' },
-            afternoon: { bg: '#dbeafe', text: '#1e40af', border: '#bfdbfe' },
-            evening: { bg: '#ffedd5', text: '#9a3412', border: '#fed7aa' },
-            night: { bg: '#e0e7ff', text: '#3730a3', border: '#c7d2fe' }
-          }
-        }
-      }
-    }
-  </script>
   <style>
+    * { -webkit-tap-highlight-color: transparent; }
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .sheet-up { animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+    .sheet-up { animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
     @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col font-sans pb-24">
 
-  <!-- TOP APP BAR -->
-  <header class="bg-brand-700 text-white sticky top-0 z-40 shadow-md">
+  <!-- TOP HEADER -->
+  <header class="bg-[#0f766e] text-white sticky top-0 z-40 shadow-md">
     <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center space-x-2.5 cursor-pointer" onclick="navigateHome()">
-        <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg backdrop-blur-sm shadow-inner">
+        <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg shadow-inner">
           💊
         </div>
         <div>
@@ -51,90 +33,74 @@
         </div>
       </div>
       <div class="flex items-center space-x-2">
-        <button id="topExportBtn" onclick="exportToExcel()" class="h-8 px-2.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center transition-all text-xs font-bold gap-1" title="Export to Excel">
-          <i class="fa-solid fa-file-excel text-emerald-300"></i> <span class="hidden sm:inline">Excel</span>
+        <button id="topExportBtn" onclick="exportToExcel()" class="h-8 px-2.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center text-xs font-bold gap-1" title="Export to Excel">
+          📊 <span class="hidden sm:inline">Excel</span>
         </button>
-        <button id="topSyncBtn" onclick="manualSync()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center transition-all text-sm" title="Sync Cloud Data">
-          <i class="fa-solid fa-rotate" id="syncSpinner"></i>
+        <button id="topSyncBtn" onclick="manualSync()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center text-sm" title="Sync Cloud Data">
+          🔄
         </button>
-        <button id="topSettingsBtn" onclick="openModal('settingsModal')" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center transition-all text-sm" title="Settings & Backup">
-          <i class="fa-solid fa-gear"></i>
+        <button id="topSettingsBtn" onclick="openModal('settingsModal')" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center text-sm" title="Settings">
+          ⚙️
         </button>
       </div>
     </div>
   </header>
 
-  <!-- PWA INSTALL BANNER -->
-  <div id="pwaBanner" class="hidden bg-gradient-to-r from-brand-600 to-teal-800 text-white px-4 py-2.5 text-xs flex items-center justify-between shadow-sm max-w-2xl mx-auto w-full">
-    <div class="flex items-center space-x-2">
-      <i class="fa-solid fa-mobile-screen-button text-base"></i>
-      <span>Install SGM App on phone for quick access</span>
-    </div>
-    <button onclick="installPWA()" class="bg-white text-brand-700 px-3 py-1 rounded-lg font-bold shadow-sm active:scale-95">INSTALL</button>
-  </div>
-
   <!-- TOAST ALERTS -->
   <div id="toastContainer" class="fixed top-16 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
-  <!-- MAIN VIEWPORT -->
+  <!-- MAIN VIEWPORT CONTAINER -->
   <main class="max-w-2xl mx-auto w-full px-4 pt-4 flex-1">
-    <div id="viewRoot"></div>
+    <div id="viewRoot">
+      <div class="p-8 text-center text-slate-500 text-xs">
+        <p>Loading SGM Dashboard...</p>
+      </div>
+    </div>
   </main>
 
   <!-- SETTINGS & BACKUP/RESTORE MODAL -->
   <div id="settingsModal" class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 sheet-up max-h-[90vh] overflow-y-auto shadow-2xl">
       <div class="flex justify-between items-center pb-4 border-b border-slate-100">
-        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <i class="fa-solid fa-sliders text-brand-600"></i> Cloud Config & Backups
-        </h2>
-        <button onclick="closeModal('settingsModal')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+        <h2 class="text-base font-bold text-slate-800">⚙️ Cloud Config & Backups</h2>
+        <button onclick="closeModal('settingsModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
       </div>
 
-      <div class="mt-4 p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-3">
-        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-          <i class="fa-solid fa-database text-brand-600"></i> Offline Backup & Restore
-        </h3>
+      <div class="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">💾 Offline Backup & Restore</h3>
         <div class="flex gap-2">
-          <button onclick="downloadJsonBackup()" class="flex-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs">
-            <i class="fa-solid fa-download text-teal-600"></i> Download Backup
+          <button onclick="downloadJsonBackup()" class="flex-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 py-2 px-3 rounded-lg text-xs font-bold">
+            📥 Download Backup
           </button>
-          <label class="flex-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer">
-            <i class="fa-solid fa-upload text-blue-600"></i> Restore File
+          <label class="flex-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center cursor-pointer">
+            📤 Restore File
             <input type="file" id="restoreFileInput" accept=".json" onchange="restoreJsonBackup(event)" class="hidden">
           </label>
         </div>
       </div>
 
-      <div class="mt-4 space-y-4 text-sm">
+      <div class="mt-4 space-y-3.5 text-xs">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">GitHub Personal Access Token (PAT):</label>
-          <input type="password" id="cfgToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 font-mono text-xs">
-          <p class="text-[11px] text-slate-400 mt-1">Repo scope required. Stored strictly in local browser storage.</p>
+          <label class="block font-semibold text-slate-600 mb-1">GitHub Personal Access Token (PAT):</label>
+          <input type="password" id="cfgToken" placeholder="ghp_xxxxxxxxxxxx" class="w-full px-3 py-2 border rounded-lg font-mono">
         </div>
-
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">GitHub Repo Name (owner/repo):</label>
-          <input type="text" id="cfgRepo" placeholder="TechIsInMyDNA/SGM-PATIENT-CARE-DASHBOARD" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 font-mono text-xs">
+          <label class="block font-semibold text-slate-600 mb-1">GitHub Repo Name (owner/repo):</label>
+          <input type="text" id="cfgRepo" placeholder="TechIsInMyDNA/SGM-PATIENT-CARE-DASHBOARD" class="w-full px-3 py-2 border rounded-lg font-mono">
         </div>
-
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">File Path in Repo:</label>
-          <input type="text" id="cfgPath" value="data.json" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 font-mono text-xs">
+          <label class="block font-semibold text-slate-600 mb-1">File Path in Repo:</label>
+          <input type="text" id="cfgPath" value="data.json" class="w-full px-3 py-2 border rounded-lg font-mono">
         </div>
-
-        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
-          <label class="block text-xs font-bold text-amber-800 flex items-center gap-1.5">
-            <i class="fa-solid fa-shield-halved"></i> Master AES-GCM Passphrase:
-          </label>
-          <input type="password" id="cfgPass" placeholder="Master Key to encrypt & decrypt index" class="w-full px-3 py-2 border border-amber-300 rounded-lg focus:ring-2 focus:ring-amber-500 font-mono text-xs bg-white">
-          <p class="text-[11px] text-amber-700">Encrypted on device. No unencrypted text is ever stored on GitHub.</p>
+        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
+          <label class="block font-bold text-amber-900">🔒 Master AES-GCM Passphrase:</label>
+          <input type="password" id="cfgPass" placeholder="Master Key to encrypt & decrypt index" class="w-full px-3 py-2 border border-amber-300 rounded-lg font-mono bg-white">
         </div>
       </div>
 
-      <div class="mt-6 flex gap-2">
-        <button onclick="saveAndSyncSettings()" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl shadow-sm text-sm">Save & Live Sync</button>
-        <button onclick="closeModal('settingsModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 hover:bg-slate-50 text-sm">Close</button>
+      <div class="mt-5 flex gap-2">
+        <button onclick="saveAndSyncSettings()" class="flex-1 bg-[#0f766e] text-white font-bold py-2.5 rounded-xl text-xs">Save & Live Sync</button>
+        <button onclick="closeModal('settingsModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 text-xs">Close</button>
       </div>
     </div>
   </div>
@@ -143,43 +109,37 @@
   <div id="patientModal" class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 sheet-up max-h-[92vh] overflow-y-auto shadow-2xl">
       <div class="flex justify-between items-center pb-4 border-b border-slate-100">
-        <h2 id="patientModalTitle" class="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <i class="fa-solid fa-user-plus text-brand-600"></i> New Patient Profile
-        </h2>
-        <button onclick="closeModal('patientModal')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+        <h2 id="patientModalTitle" class="text-base font-bold text-slate-800">👤 New Patient Profile</h2>
+        <button onclick="closeModal('patientModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
       </div>
 
-      <form onsubmit="handlePatientFormSubmit(event)" class="mt-4 space-y-3.5 text-sm">
+      <form onsubmit="handlePatientFormSubmit(event)" class="mt-4 space-y-3 text-xs">
         <input type="hidden" id="pFormId">
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Patient Name *</label>
-          <input type="text" id="pFormName" required placeholder="e.g. Ramesh Agrawal" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500">
+          <label class="block font-semibold text-slate-600 mb-1">Patient Name *</label>
+          <input type="text" id="pFormName" required placeholder="e.g. Ramesh Agrawal" class="w-full px-3 py-2 border rounded-lg text-sm">
         </div>
-
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-2.5">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Phone Number (10 digits) *</label>
-            <input type="tel" id="pFormPhone" required pattern="[0-9]{10}" placeholder="98XXXXXXXX" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500">
+            <label class="block font-semibold text-slate-600 mb-1">Phone Number *</label>
+            <input type="tel" id="pFormPhone" required pattern="[0-9]{10}" placeholder="98XXXXXXXX" class="w-full px-3 py-2 border rounded-lg text-sm">
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Consulting Doctor</label>
-            <input type="text" id="pFormDoctor" placeholder="e.g. Dr. Verma" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500">
+            <label class="block font-semibold text-slate-600 mb-1">Consulting Doctor</label>
+            <input type="text" id="pFormDoctor" placeholder="e.g. Dr. Verma" class="w-full px-3 py-2 border rounded-lg text-sm">
           </div>
         </div>
-
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Medical Conditions / Diagnosis</label>
-          <input type="text" id="pFormDiag" placeholder="e.g. Hypertension, Type 2 Diabetes" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500">
+          <label class="block font-semibold text-slate-600 mb-1">Medical Diagnosis</label>
+          <input type="text" id="pFormDiag" placeholder="e.g. Diabetes, BP" class="w-full px-3 py-2 border rounded-lg text-sm">
         </div>
-
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Known Allergies / Critical Alerts</label>
-          <input type="text" id="pFormAllergies" placeholder="e.g. Sulfa drugs, Penicillin allergy" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 bg-red-50/50">
+          <label class="block font-semibold text-slate-600 mb-1">Allergies / Critical Alerts</label>
+          <input type="text" id="pFormAllergies" placeholder="e.g. Sulfa drugs" class="w-full px-3 py-2 border rounded-lg text-sm bg-red-50/50">
         </div>
-
-        <div class="pt-3 flex gap-2">
-          <button type="submit" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-sm">Save Patient Record</button>
-          <button type="button" onclick="closeModal('patientModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 hover:bg-slate-50 text-sm">Cancel</button>
+        <div class="pt-2 flex gap-2">
+          <button type="submit" class="flex-1 bg-[#0f766e] text-white font-bold py-2.5 rounded-xl text-xs">Save Patient Record</button>
+          <button type="button" onclick="closeModal('patientModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 text-xs">Cancel</button>
         </div>
       </form>
     </div>
@@ -189,128 +149,116 @@
   <div id="medModal" class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 sheet-up max-h-[92vh] overflow-y-auto shadow-2xl">
       <div class="flex justify-between items-center pb-4 border-b border-slate-100">
-        <h2 id="medModalTitle" class="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <i class="fa-solid fa-pills text-brand-600"></i> Add Medicine
-        </h2>
-        <button onclick="closeModal('medModal')" class="text-slate-400 hover:text-slate-600 text-lg"><i class="fa-solid fa-xmark"></i></button>
+        <h2 id="medModalTitle" class="text-base font-bold text-slate-800">💊 Add Medicine</h2>
+        <button onclick="closeModal('medModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
       </div>
 
-      <form onsubmit="handleMedicineFormSubmit(event)" class="mt-4 space-y-4 text-sm">
+      <form onsubmit="handleMedicineFormSubmit(event)" class="mt-4 space-y-3.5 text-xs">
         <input type="hidden" id="medEditIndex" value="-1">
         <input type="hidden" id="medExistingStartDate" value="">
 
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Medicine Name & Strength *</label>
-          <input type="text" id="mName" required placeholder="e.g. Telmisartan 40mg / Glycomet GP 1" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 font-medium">
+          <label class="block font-semibold text-slate-600 mb-1">Medicine Name & Strength *</label>
+          <input type="text" id="mName" required placeholder="e.g. Telmisartan 40mg" class="w-full px-3 py-2 border rounded-lg text-sm font-semibold">
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1.5">Dose Schedule & Tablet Quantity Per Time:</label>
+          <label class="block font-semibold text-slate-600 mb-1">Dose Schedule (Tablets Per Time):</label>
           <div class="grid grid-cols-2 gap-2 text-xs">
-            <div class="p-2.5 rounded-xl border border-amber-200 bg-amber-50/60">
-              <label class="flex items-center gap-2 font-bold text-amber-900 cursor-pointer">
-                <input type="checkbox" id="mornCheck" onchange="toggleDoseQtyInput('morn')" class="rounded text-amber-600">
-                <span>🌅 Subah (Morning)</span>
+            <div class="p-2 border rounded-xl bg-amber-50/70 border-amber-200">
+              <label class="flex items-center gap-1.5 font-bold text-amber-900 cursor-pointer">
+                <input type="checkbox" id="mornCheck" onchange="toggleDoseQty('morn')">
+                <span>🌅 Subah</span>
               </label>
-              <div id="mornQtyWrap" class="hidden mt-2">
-                <input type="number" id="mornQty" step="0.25" min="0.25" value="1" placeholder="Dose (1, 0.5)" class="w-full bg-white border border-amber-300 rounded px-2 py-1 text-xs font-bold text-amber-900">
+              <div id="mornQtyWrap" class="hidden mt-1.5">
+                <input type="number" id="mornQty" step="0.25" min="0.25" value="1" class="w-full bg-white border border-amber-300 rounded px-2 py-1 text-xs font-bold text-amber-900">
               </div>
             </div>
 
-            <div class="p-2.5 rounded-xl border border-blue-200 bg-blue-50/60">
-              <label class="flex items-center gap-2 font-bold text-blue-900 cursor-pointer">
-                <input type="checkbox" id="noonCheck" onchange="toggleDoseQtyInput('noon')" class="rounded text-blue-600">
-                <span>☀️ Dupahar (Afternoon)</span>
+            <div class="p-2 border rounded-xl bg-blue-50/70 border-blue-200">
+              <label class="flex items-center gap-1.5 font-bold text-blue-900 cursor-pointer">
+                <input type="checkbox" id="noonCheck" onchange="toggleDoseQty('noon')">
+                <span>☀️ Dupahar</span>
               </label>
-              <div id="noonQtyWrap" class="hidden mt-2">
-                <input type="number" id="noonQty" step="0.25" min="0.25" value="1" placeholder="Dose (1, 0.5)" class="w-full bg-white border border-blue-300 rounded px-2 py-1 text-xs font-bold text-blue-900">
+              <div id="noonQtyWrap" class="hidden mt-1.5">
+                <input type="number" id="noonQty" step="0.25" min="0.25" value="1" class="w-full bg-white border border-blue-300 rounded px-2 py-1 text-xs font-bold text-blue-900">
               </div>
             </div>
 
-            <div class="p-2.5 rounded-xl border border-orange-200 bg-orange-50/60">
-              <label class="flex items-center gap-2 font-bold text-orange-900 cursor-pointer">
-                <input type="checkbox" id="eveCheck" onchange="toggleDoseQtyInput('eve')" class="rounded text-orange-600">
-                <span>🌇 Shaam (Evening)</span>
+            <div class="p-2 border rounded-xl bg-orange-50/70 border-orange-200">
+              <label class="flex items-center gap-1.5 font-bold text-orange-900 cursor-pointer">
+                <input type="checkbox" id="eveCheck" onchange="toggleDoseQty('eve')">
+                <span>🌇 Shaam</span>
               </label>
-              <div id="eveQtyWrap" class="hidden mt-2">
-                <input type="number" id="eveQty" step="0.25" min="0.25" value="1" placeholder="Dose (1, 0.5)" class="w-full bg-white border border-orange-300 rounded px-2 py-1 text-xs font-bold text-orange-900">
+              <div id="eveQtyWrap" class="hidden mt-1.5">
+                <input type="number" id="eveQty" step="0.25" min="0.25" value="1" class="w-full bg-white border border-orange-300 rounded px-2 py-1 text-xs font-bold text-orange-900">
               </div>
             </div>
 
-            <div class="p-2.5 rounded-xl border border-indigo-200 bg-indigo-50/60">
-              <label class="flex items-center gap-2 font-bold text-indigo-900 cursor-pointer">
-                <input type="checkbox" id="nightCheck" onchange="toggleDoseQtyInput('night')" class="rounded text-indigo-600">
-                <span>🌙 Raat (Night)</span>
+            <div class="p-2 border rounded-xl bg-indigo-50/70 border-indigo-200">
+              <label class="flex items-center gap-1.5 font-bold text-indigo-900 cursor-pointer">
+                <input type="checkbox" id="nightCheck" onchange="toggleDoseQty('night')">
+                <span>🌙 Raat</span>
               </label>
-              <div id="nightQtyWrap" class="hidden mt-2">
-                <input type="number" id="nightQty" step="0.25" min="0.25" value="0.5" placeholder="Dose (1, 0.5)" class="w-full bg-white border border-indigo-300 rounded px-2 py-1 text-xs font-bold text-indigo-900">
+              <div id="nightQtyWrap" class="hidden mt-1.5">
+                <input type="number" id="nightQty" step="0.25" min="0.25" value="0.5" class="w-full bg-white border border-indigo-300 rounded px-2 py-1 text-xs font-bold text-indigo-900">
               </div>
             </div>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-3">
+        <div class="grid grid-cols-2 gap-2.5">
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Meal Relation</label>
-            <select id="mMeal" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 bg-white">
+            <label class="block font-semibold text-slate-600 mb-1">Meal Relation</label>
+            <select id="mMeal" class="w-full px-3 py-2 border rounded-lg bg-white text-xs">
               <option value="after">🍽️ Khaane Ke Baad</option>
-              <option value="before">🥣 Khaane Se Pehle (Empty Stomach)</option>
-              <option value="with">🥗 Khaate Waqt (With Meal)</option>
+              <option value="before">🥣 Khaane Se Pehle</option>
+              <option value="with">🥗 Khaate Waqt</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Current Stock (Total Tabs) *</label>
-            <input type="number" id="mTotalQty" required min="0" step="1" placeholder="e.g. 30" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500">
+            <label class="block font-semibold text-slate-600 mb-1">Current Stock (Total Tabs) *</label>
+            <input type="number" id="mTotalQty" required min="0" step="1" placeholder="e.g. 30" class="w-full px-3 py-2 border rounded-lg text-xs font-bold">
           </div>
         </div>
 
         <div>
-          <label class="block text-xs font-semibold text-slate-600 mb-1">Doctor's Remark / Instruction</label>
-          <input type="text" id="mInstructions" placeholder="e.g. Paani khoob piyein / BP check karte rahein" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500">
+          <label class="block font-semibold text-slate-600 mb-1">Doctor's Remark / Instruction</label>
+          <input type="text" id="mInstructions" placeholder="e.g. BP high hone par" class="w-full px-3 py-2 border rounded-lg text-xs">
         </div>
 
-        <div id="reviseContainer" class="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-2">
-          <label class="flex items-center space-x-2.5 cursor-pointer">
-            <input type="checkbox" id="isDoctorRevised" onchange="toggleRevisionNote(this.checked)" class="w-4 h-4 rounded text-rose-600 focus:ring-rose-500">
-            <span class="text-xs font-bold text-rose-900">
-              <i class="fa-solid fa-code-branch"></i> Mark as Doctor Revised / Changed Dose
-            </span>
+        <div id="reviseContainer" class="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-1.5">
+          <label class="flex items-center space-x-2 cursor-pointer">
+            <input type="checkbox" id="isDoctorRevised" onchange="toggleRevNote(this.checked)" class="w-4 h-4 rounded text-rose-600">
+            <span class="text-xs font-bold text-rose-900">📝 Mark as Doctor Revised / Changed Dose</span>
           </label>
-          <p class="text-[11px] text-rose-600 leading-tight">
-            Agar doctor ne dose badla hai toh tick karein. Tabhi purani dose revision history me jayegi.
-          </p>
           <div id="reviseReasonWrap" class="hidden pt-1">
-            <label class="block text-[11px] font-semibold text-rose-800 mb-1">Revision Reason:</label>
-            <input type="text" id="mChangeReason" placeholder="e.g. Doctor reduced dose after normal BP" class="w-full px-3 py-1.5 border border-rose-300 rounded-lg text-xs bg-white">
+            <input type="text" id="mChangeReason" placeholder="Reason (e.g. Doctor reduced dose)" class="w-full px-3 py-1.5 border border-rose-300 rounded-lg text-xs bg-white">
           </div>
         </div>
 
         <div class="pt-2 flex gap-2">
-          <button type="submit" class="flex-1 bg-brand-600 hover:bg-brand-700 text-white font-bold py-2.5 rounded-xl text-sm shadow-sm">Save Medicine</button>
-          <button type="button" onclick="closeModal('medModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 hover:bg-slate-50 text-sm">Cancel</button>
+          <button type="submit" class="flex-1 bg-[#0f766e] text-white font-bold py-2.5 rounded-xl text-xs">Save Medicine</button>
+          <button type="button" onclick="closeModal('medModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 text-xs">Cancel</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- PATIENT PASS / QR SHARING MODAL -->
+  <!-- PATIENT PASS / QR MODAL -->
   <div id="shareModal" class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center shadow-2xl">
-      <h3 class="text-base font-bold text-slate-800 flex items-center justify-center gap-1.5 mb-1">
-        <i class="fa-solid fa-qrcode text-brand-600"></i> Patient Digital Pass
-      </h3>
-      <p class="text-xs text-slate-500 mb-4">Scan QR ya link WhatsApp par share karein. Zero login required for patient.</p>
-
+      <h3 class="text-base font-bold text-slate-800 mb-1">📲 Patient Digital Pass</h3>
+      <p class="text-xs text-slate-500 mb-4">Patient ke phone se scan karein ya direct WhatsApp karein.</p>
       <div class="bg-white p-3 rounded-xl border border-slate-200 inline-block shadow-sm">
         <div id="qrcodeCanvas"></div>
       </div>
-
       <div class="mt-4 flex flex-col gap-2">
-        <button id="modalWaBtn" class="w-full bg-[#25D366] hover:bg-[#20ba5a] text-white py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-2 shadow-sm">
-          <i class="fa-brands fa-whatsapp text-base"></i> Send Digital Pass on WhatsApp
+        <button id="modalWaBtn" class="w-full bg-[#25D366] hover:bg-[#20ba5a] text-white py-2.5 rounded-xl font-bold text-xs shadow-sm">
+          💬 Send on WhatsApp
         </button>
-        <button onclick="copyShareUrl()" class="w-full border border-slate-300 py-2 rounded-xl font-medium text-xs text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-1.5">
-          <i class="fa-regular fa-copy"></i> Copy Patient View Link
+        <button onclick="copyShareUrl()" class="w-full border border-slate-300 py-2 rounded-xl font-medium text-xs text-slate-700">
+          📋 Copy Link
         </button>
         <button onclick="closeModal('shareModal')" class="text-xs text-slate-400 font-semibold py-1">Close</button>
       </div>
@@ -319,7 +267,7 @@
 
   <script>
     // ==========================================
-    // 1. CONFIG & STORAGE ENGINE
+    // 1. CONFIG & SAFE STATE
     // ==========================================
     const DEFAULT_CONFIG = {
       token: '',
@@ -328,14 +276,17 @@
       pass: ''
     };
 
+    function safeJsonParse(val, fallback) {
+      try { return val ? JSON.parse(val) : fallback; } catch (e) { return fallback; }
+    }
+
     let APP_STATE = {
-      config: { ...DEFAULT_CONFIG, ...JSON.parse(localStorage.getItem('sgm_cfg') || '{}') },
-      patients: JSON.parse(localStorage.getItem('sgm_patients') || '{}'),
-      patientKeys: JSON.parse(localStorage.getItem('sgm_p_keys') || '{}'),
+      config: Object.assign({}, DEFAULT_CONFIG, safeJsonParse(localStorage.getItem('sgm_cfg'), {})),
+      patients: safeJsonParse(localStorage.getItem('sgm_patients'), {}),
+      patientKeys: safeJsonParse(localStorage.getItem('sgm_p_keys'), {}),
       currentPatientId: null,
       isPatientView: false,
-      fileSha: localStorage.getItem('sgm_file_sha') || null,
-      deferredPrompt: null
+      fileSha: localStorage.getItem('sgm_file_sha') || null
     };
 
     // ==========================================
@@ -361,25 +312,22 @@
         const iv = crypto.getRandomValues(new Uint8Array(12));
         const key = await this.deriveKey(passphrase, salt);
         const encoded = new TextEncoder().encode(JSON.stringify(plainObject));
-
         const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded);
 
         return {
-          salt: btoa(String.fromCharCode(...salt)),
-          iv: btoa(String.fromCharCode(...iv)),
-          data: btoa(String.fromCharCode(...new Uint8Array(cipher)))
+          salt: btoa(String.fromCharCode.apply(null, salt)),
+          iv: btoa(String.fromCharCode.apply(null, iv)),
+          data: btoa(String.fromCharCode.apply(null, new Uint8Array(cipher)))
         };
       },
 
       async decrypt(cipherPackage, passphrase) {
-        if (!cipherPackage) throw new Error("Empty package");
+        if (!cipherPackage) throw new Error("Empty payload");
         const sB64 = cipherPackage.salt || cipherPackage.s;
         const iB64 = cipherPackage.iv || cipherPackage.i;
         const dB64 = cipherPackage.data || cipherPackage.d;
 
-        if (!sB64 || !iB64 || !dB64) {
-          throw new Error("Invalid cipher package");
-        }
+        if (!sB64 || !iB64 || !dB64) throw new Error("Invalid cipher structure");
 
         const salt = Uint8Array.from(atob(sB64), c => c.charCodeAt(0));
         const iv = Uint8Array.from(atob(iB64), c => c.charCodeAt(0));
@@ -391,16 +339,16 @@
       },
 
       getNextPatientId() {
-        const existingIds = Object.keys(APP_STATE.patients || {});
-        let maxNum = 0;
-        existingIds.forEach(id => {
+        const ids = Object.keys(APP_STATE.patients || {});
+        let max = 0;
+        ids.forEach(id => {
           const match = id.match(/SGMP-?(\d+)/i) || id.match(/SGM-?(\d+)/i);
           if (match && match[1]) {
-            const num = parseInt(match[1], 10);
-            if (num > maxNum && num < 1000) maxNum = num;
+            const n = parseInt(match[1], 10);
+            if (n > max && n < 1000) max = n;
           }
         });
-        const next = maxNum + 1;
+        const next = max + 1;
         return `SGMP-${next < 10 ? '0' + next : next}`;
       },
 
@@ -412,33 +360,25 @@
     };
 
     // ==========================================
-    // 3. GITHUB API LIVE SYNC (AUTO SHA HANDLER)
+    // 3. GITHUB API LIVE SYNC
     // ==========================================
     const GitHubSync = {
-      async pullRemoteData(targetRepo = null) {
+      async pullRemoteData(targetRepo) {
         const repo = targetRepo || APP_STATE.config.repo;
         const path = APP_STATE.config.path || 'data.json';
         const token = APP_STATE.config.token;
 
-        if (!repo) throw new Error("GitHub repo configured nahi hai!");
+        if (!repo) throw new Error("Repo name missing");
 
         if (token) {
           const url = `https://api.github.com/repos/${repo}/contents/${path}`;
           const res = await fetch(url, {
-            headers: {
-              'Authorization': `token ${token}`,
-              'Accept': 'application/vnd.github.v3+json'
-            },
+            headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
             cache: 'no-store'
           });
 
-          if (res.status === 404) {
-            return { sha: null, data: { version: 1, store: "Shree Ganesh Medicals", records: {} } };
-          }
-          if (!res.ok) {
-            const err = await res.json();
-            throw new Error(`GitHub Error: ${err.message || res.statusText}`);
-          }
+          if (res.status === 404) return { sha: null, data: { version: 1, records: {} } };
+          if (!res.ok) throw new Error(`GitHub error: ${res.statusText}`);
 
           const json = await res.json();
           APP_STATE.fileSha = json.sha;
@@ -448,42 +388,26 @@
           return { sha: json.sha, data: JSON.parse(content) };
         }
 
-        const rawUrls = [
-          `https://raw.githubusercontent.com/${repo}/main/${path}`,
-          `https://raw.githubusercontent.com/${repo}/master/${path}`,
-          `https://api.github.com/repos/${repo}/contents/${path}`
-        ];
-
-        for (let u of rawUrls) {
-          try {
-            const r = await fetch(u, { cache: 'no-store' });
-            if (r.ok) {
-              const resData = await r.json();
-              if (resData.content) {
-                const dec = decodeURIComponent(escape(atob(resData.content)));
-                return { sha: resData.sha, data: JSON.parse(dec) };
-              }
-              return { sha: null, data: resData };
-            }
-          } catch (e) {}
+        const rawUrl = `https://raw.githubusercontent.com/${repo}/main/${path}`;
+        const rawRes = await fetch(rawUrl, { cache: 'no-store' });
+        if (rawRes.ok) {
+          const rJson = await rawRes.json();
+          return { sha: null, data: rJson };
         }
 
-        throw new Error("Could not fetch remote data file from GitHub repository.");
+        throw new Error("Could not fetch remote file");
       },
 
       async pushRemoteData(dataPayload) {
         const { repo, path, token } = APP_STATE.config;
-        if (!token || !repo) throw new Error("GitHub token and repo are required to write data.");
+        if (!token || !repo) throw new Error("Token/Repo missing");
 
         const url = `https://api.github.com/repos/${repo}/contents/${path}`;
         
         let currentSha = APP_STATE.fileSha;
         try {
           const checkRes = await fetch(url, {
-            headers: {
-              'Authorization': `token ${token}`,
-              'Accept': 'application/vnd.github.v3+json'
-            },
+            headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
             cache: 'no-store'
           });
           if (checkRes.ok) {
@@ -495,27 +419,18 @@
         } catch (e) {}
 
         const utf8Content = btoa(unescape(encodeURIComponent(JSON.stringify(dataPayload, null, 2))));
-
-        const bodyData = {
-          message: `SGM Rx Update: ${new Date().toISOString()}`,
-          content: utf8Content
-        };
-        if (currentSha) {
-          bodyData.sha = currentSha;
-        }
+        const bodyData = { message: `SGM Rx Update: ${new Date().toISOString()}`, content: utf8Content };
+        if (currentSha) bodyData.sha = currentSha;
 
         const res = await fetch(url, {
           method: 'PUT',
-          headers: {
-            'Authorization': `token ${token}`,
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify(bodyData)
         });
 
         if (!res.ok) {
           const err = await res.json();
-          throw new Error(`GitHub Save Failed: ${err.message || res.statusText}`);
+          throw new Error(err.message || 'GitHub save failed');
         }
 
         const resJson = await res.json();
@@ -525,16 +440,17 @@
     };
 
     // ==========================================
-    // 4. CALENDAR-BASED DAILY STOCK CALCULATOR
+    // 4. DAILY COUNTDOWN STATS CALCULATOR
     // ==========================================
     function calculateLiveMedStats(m, patientCreatedDate) {
-      const perDay = calculateTotalPerDay(m);
+      let perDay = 0;
+      if (m.morn) perDay += parseFloat(m.mornQty || 1);
+      if (m.noon) perDay += parseFloat(m.noonQty || 1);
+      if (m.eve) perDay += parseFloat(m.eveQty || 1);
+      if (m.night) perDay += parseFloat(m.nightQty || 0.5);
+      if (perDay <= 0) perDay = 1;
+
       const totalInitial = parseFloat(m.initialQty !== undefined ? m.initialQty : (m.qty || 0));
-
-      if (perDay <= 0) {
-        return { remainingTabs: totalInitial, daysLeft: 999, perDay: 0 };
-      }
-
       const startTimestamp = m.startDate || m.lastRefillDate || patientCreatedDate || Date.now();
       const now = Date.now();
 
@@ -553,171 +469,7 @@
     }
 
     // ==========================================
-    // 5. EXCEL EXPORT & BACKUP / RESTORE
-    // ==========================================
-    function exportToExcel() {
-      const patients = Object.values(APP_STATE.patients || {});
-      if (patients.length === 0) {
-        return alert("Export karne ke liye koi patient record uplabdh nahi hai!");
-      }
-
-      const headers = [
-        "Patient ID", "Patient Name", "Phone", "Doctor", "Conditions", "Allergies",
-        "Medicine Name", "Subah (Morning)", "Dupahar (Afternoon)", "Shaam (Evening)", "Raat (Night)",
-        "Meal Relation", "Initial Stock", "Live Stock Remaining", "Per Day Consumption", "Days Left", "Status", "Remarks"
-      ];
-
-      const rows = [];
-      rows.push(headers.join(","));
-
-      patients.forEach(p => {
-        const meds = p.medicines || [];
-        if (meds.length === 0) {
-          rows.push([
-            `"${p.id}"`, `"${p.name}"`, `"${p.phone}"`, `"${p.doctor || ''}"`, `"${p.conditions || ''}"`, `"${p.allergies || ''}"`,
-            `"No medicines logged"`, "", "", "", "", "", "", "", "", "", "", ""
-          ].join(","));
-        } else {
-          meds.forEach(m => {
-            const stats = calculateLiveMedStats(m, p.created || p.lastUpdated);
-            const mealText = m.meal === 'before' ? 'Khaane Se Pehle' : (m.meal === 'with' ? 'Khaate Waqt' : 'Khaane Ke Baad');
-            const status = m.discontinued ? 'DISCONTINUED' : 'ACTIVE';
-
-            rows.push([
-              `"${p.id}"`,
-              `"${p.name}"`,
-              `"${p.phone}"`,
-              `"${p.doctor || ''}"`,
-              `"${p.conditions || ''}"`,
-              `"${p.allergies || ''}"`,
-              `"${m.name}"`,
-              `"${m.morn ? m.mornQty || 1 : 0}"`,
-              `"${m.noon ? m.noonQty || 1 : 0}"`,
-              `"${m.eve ? m.eveQty || 1 : 0}"`,
-              `"${m.night ? m.nightQty || 0.5 : 0}"`,
-              `"${mealText}"`,
-              `"${m.initialQty !== undefined ? m.initialQty : m.qty}"`,
-              `"${stats.remainingTabs}"`,
-              `"${stats.perDay}"`,
-              `"${stats.daysLeft}"`,
-              `"${status}"`,
-              `"${(m.instructions || '').replace(/"/g, '""')}"`
-            ].join(","));
-          });
-        }
-      });
-
-      const csvContent = "\uFEFF" + rows.join("\r\n");
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `SGM_Patients_Medication_Register_${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      showToast("Excel sheet downloaded successfully!");
-    }
-
-    function downloadJsonBackup() {
-      const backupPackage = {
-        app: "SGM_Rx_Timeline",
-        exportedAt: new Date().toISOString(),
-        patients: APP_STATE.patients,
-        patientKeys: APP_STATE.patientKeys
-      };
-
-      const blob = new Blob([JSON.stringify(backupPackage, null, 2)], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `SGM_Backup_Full_${new Date().toISOString().slice(0, 10)}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      showToast("Backup file downloaded!");
-    }
-
-    function restoreJsonBackup(event) {
-      const file = event.target.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const json = JSON.parse(e.target.result);
-          if (!json.patients) throw new Error("Invalid backup format!");
-
-          if (confirm(`Is file me ${Object.keys(json.patients).length} patients ka record hai. Restore karein?`)) {
-            APP_STATE.patients = { ...APP_STATE.patients, ...json.patients };
-            if (json.patientKeys) {
-              APP_STATE.patientKeys = { ...APP_STATE.patientKeys, ...json.patientKeys };
-            }
-            saveLocalData();
-            renderAdminDashboard();
-            closeModal('settingsModal');
-            showToast("Backup restored locally!");
-
-            if (APP_STATE.config.token && APP_STATE.config.pass) {
-              await saveToGitHubCloud();
-            }
-          }
-        } catch (err) {
-          alert("Restore Failed: " + err.message);
-        }
-      };
-      reader.readAsText(file);
-      event.target.value = '';
-    }
-
-    // ==========================================
-    // 6. ROUTER & CONTROLLER (CRASH PROTECTED)
-    // ==========================================
-    async function router() {
-      try {
-        const hash = window.location.hash || '';
-
-        if (hash.startsWith('#/view')) {
-          APP_STATE.isPatientView = true;
-          document.getElementById('headerEnvTag').innerText = 'Patient Pass';
-          document.getElementById('topExportBtn').style.display = 'none';
-          document.getElementById('topSyncBtn').style.display = 'none';
-          document.getElementById('topSettingsBtn').style.display = 'none';
-
-          const params = new URLSearchParams(hash.split('?')[1]);
-          const patientId = params.get('id');
-          const patientKey = params.get('k');
-          const repoParam = params.get('repo');
-
-          await renderPatientDirectView(patientId, patientKey, repoParam);
-        } else if (hash.startsWith('#/patient/')) {
-          APP_STATE.isPatientView = false;
-          const patientId = hash.replace('#/patient/', '');
-          renderAdminPatientView(patientId);
-        } else {
-          APP_STATE.isPatientView = false;
-          renderAdminDashboard();
-        }
-      } catch (routerErr) {
-        console.error("Router error:", routerErr);
-        renderAdminDashboard();
-      }
-    }
-
-    window.addEventListener('hashchange', router);
-    window.addEventListener('DOMContentLoaded', async () => {
-      populateSettingsForm();
-      setupPWA();
-      await router();
-      if (!APP_STATE.isPatientView && APP_STATE.config.token && APP_STATE.config.pass) {
-        manualSync(true);
-      }
-    });
-
-    // ==========================================
-    // 7. VIEW RENDERING (SAFE & TESTED)
+    // 5. VIEW RENDERING ENGINE
     // ==========================================
     function renderAdminDashboard() {
       const root = document.getElementById('viewRoot');
@@ -745,23 +497,20 @@
 
       allActiveMedications.sort((a, b) => a.daysLeft - b.daysLeft);
 
-      let dailyStockHtml = '';
+      let stockTrackerHtml = '';
       if (allActiveMedications.length > 0) {
-        dailyStockHtml = `
-          <div class="mb-5 bg-white border border-slate-200 rounded-2xl p-4 shadow-xs">
+        stockTrackerHtml = `
+          <div class="mb-5 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
             <div class="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-3">
-              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center gap-1.5">
-                <i class="fa-solid fa-hourglass-half text-brand-600"></i> 
-                Daily Stock & Refill Tracker (${allActiveMedications.length} Medicines)
+              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                ⏳ Daily Stock & Refill Tracker (${allActiveMedications.length} Medicines)
               </h3>
-              <span class="text-[10px] text-slate-400 font-medium">Auto Daily Countdown</span>
+              <span class="text-[10px] text-slate-400 font-medium">Live Countdown</span>
             </div>
-            
             <div class="space-y-2.5 max-h-72 overflow-y-auto pr-1">
               ${allActiveMedications.map(r => {
                 let badgeClass = "bg-emerald-50 border-emerald-200 text-emerald-800";
                 let badgeText = `✅ ${r.daysLeft} din bachi hai`;
-                
                 if (r.daysLeft <= 3) {
                   badgeClass = "bg-rose-50 border-rose-300 text-rose-800 animate-pulse";
                   badgeText = `🚨 Sirf ${r.daysLeft} din bache!`;
@@ -771,30 +520,16 @@
                 }
 
                 return `
-                  <div class="bg-slate-50 hover:bg-white p-3 rounded-xl border border-slate-200 transition-all flex items-center justify-between shadow-2xs">
-                    <div class="space-y-0.5">
-                      <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                        <span>${r.patientName}</span>
-                        <span class="text-[10px] font-mono text-slate-400">(${r.patientId})</span>
-                      </div>
-                      <div class="text-[11px] font-semibold text-brand-700">${r.medName}</div>
-                      <div class="text-[10px] text-slate-500 font-medium">
-                        Live Stock: <b>${r.remainingTabs} tabs</b> • Dose: <b>${r.perDay} tab/day</b>
-                      </div>
+                  <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between shadow-2xs">
+                    <div>
+                      <div class="text-xs font-bold text-slate-800">${r.patientName} <span class="text-[10px] text-slate-400">(${r.patientId})</span></div>
+                      <div class="text-[11px] font-semibold text-[#0f766e]">${r.medName}</div>
+                      <div class="text-[10px] text-slate-500 font-medium">Live Stock: <b>${r.remainingTabs} tabs</b> • Dose: <b>${r.perDay} tab/day</b></div>
                     </div>
-
-                    <div class="flex items-center gap-2">
-                      <span class="text-[10px] font-bold px-2 py-1 rounded-lg border ${badgeClass}">
-                        ${badgeText}
-                      </span>
-                      <div class="flex items-center gap-1">
-                        <a href="tel:${r.patientPhone}" class="w-7 h-7 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center text-xs" title="Call Patient">
-                          <i class="fa-solid fa-phone"></i>
-                        </a>
-                        <a href="https://wa.me/91${r.patientPhone}?text=${encodeURIComponent(`Namaste ${r.patientName} ji,\nShree Ganesh Medicals se reminder:\nAapki dawai *${r.medName}* ka stock lagbhag *${r.daysLeft} din* ka bacha hai (${r.remainingTabs} tabs baaki).\nKripya regular dose ke liye samay par refill kara lein.`)}" target="_blank" class="w-7 h-7 rounded-lg bg-[#25D366] hover:bg-[#20ba5a] text-white flex items-center justify-center text-xs" title="WhatsApp Reminder">
-                          <i class="fa-brands fa-whatsapp"></i>
-                        </a>
-                      </div>
+                    <div class="flex items-center gap-1.5">
+                      <span class="text-[10px] font-bold px-2 py-1 rounded-lg border ${badgeClass}">${badgeText}</span>
+                      <a href="tel:${r.patientPhone}" class="w-7 h-7 rounded-lg bg-slate-200 flex items-center justify-center text-xs" title="Call">📞</a>
+                      <a href="https://wa.me/91${r.patientPhone}?text=${encodeURIComponent(`Namaste ${r.patientName} ji,\nShree Ganesh Medicals se reminder: Aapki dawai *${r.medName}* ka stock lagbhag *${r.daysLeft} din* ka bacha hai (${r.remainingTabs} tabs baaki).`)}" target="_blank" class="w-7 h-7 rounded-lg bg-[#25D366] text-white flex items-center justify-center text-xs" title="WhatsApp">💬</a>
                     </div>
                   </div>
                 `;
@@ -805,21 +540,20 @@
       }
 
       root.innerHTML = `
-        ${dailyStockHtml}
+        ${stockTrackerHtml}
 
         <div class="flex items-center justify-between mb-4">
           <div>
             <h2 class="text-base font-bold text-slate-800">Patients Record</h2>
             <p class="text-xs text-slate-500">${patients.length} Active Profiles</p>
           </div>
-          <button onclick="openPatientModal()" class="bg-brand-600 hover:bg-brand-700 active:scale-95 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5 shadow-sm">
-            <i class="fa-solid fa-user-plus"></i> Add Patient
+          <button onclick="openPatientModal()" class="bg-[#0f766e] text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm">
+            + Add Patient
           </button>
         </div>
 
         <div class="relative mb-4">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-xs"></i>
-          <input type="text" oninput="filterPatients(this.value)" placeholder="Search patient by name, phone or condition..." class="w-full bg-white pl-9 pr-4 py-2.5 rounded-xl border border-slate-200 text-xs focus:ring-2 focus:ring-brand-500">
+          <input type="text" oninput="filterPatients(this.value)" placeholder="🔍 Search patient by name or phone..." class="w-full bg-white px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs">
         </div>
 
         <div id="patientListContainer" class="space-y-3">
@@ -832,7 +566,6 @@
       if (!patients || patients.length === 0) {
         return `
           <div class="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-400">
-            <i class="fa-solid fa-folder-open text-3xl mb-2 text-slate-300"></i>
             <p class="text-xs font-semibold">No patient records available locally.</p>
             <p class="text-[11px] mt-1">Tap <b>🔄 (Sync)</b> to pull from GitHub, or tap <b>+ Add Patient</b> to create one.</p>
           </div>
@@ -842,28 +575,18 @@
       return patients.map(p => {
         const activeMeds = (p.medicines || []).filter(m => !m.discontinued);
         return `
-          <div onclick="navigateTo('#/patient/${p.id}')" class="bg-white border border-slate-200 hover:border-brand-500 p-4 rounded-2xl shadow-2xs transition-all active:scale-[0.99] cursor-pointer">
+          <div onclick="navigateTo('#/patient/${p.id}')" class="bg-white border border-slate-200 p-4 rounded-2xl shadow-2xs cursor-pointer hover:border-[#0f766e]">
             <div class="flex items-start justify-between">
               <div>
                 <h3 class="text-sm font-bold text-slate-900">${p.name}</h3>
-                <p class="text-xs text-slate-500 flex items-center gap-2 mt-0.5">
-                  <span><i class="fa-solid fa-phone text-[10px]"></i> ${p.phone}</span>
-                  <span>•</span>
-                  <span><i class="fa-solid fa-user-doctor text-[10px]"></i> ${p.doctor || 'General'}</span>
-                </p>
+                <p class="text-xs text-slate-500 mt-0.5">📞 ${p.phone} • 🩺 ${p.doctor || 'General'}</p>
               </div>
               <span class="text-[10px] font-mono font-bold bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-lg">${p.id}</span>
             </div>
-
             ${p.conditions ? `<div class="mt-2 text-[11px] text-slate-600 bg-slate-50 px-2.5 py-1 rounded-md inline-block">🩺 ${p.conditions}</div>` : ''}
-
             <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span class="font-semibold text-slate-700 flex items-center gap-1.5">
-                <i class="fa-solid fa-capsules text-brand-600"></i> ${activeMeds.length} Active Doses
-              </span>
-              <span class="text-brand-600 font-bold text-[11px] flex items-center gap-1">
-                View Timeline <i class="fa-solid fa-chevron-right text-[9px]"></i>
-              </span>
+              <span class="font-semibold text-slate-700">💊 ${activeMeds.length} Active Doses</span>
+              <span class="text-[#0f766e] font-bold text-[11px]">View Timeline →</span>
             </div>
           </div>
         `;
@@ -874,61 +597,32 @@
       APP_STATE.currentPatientId = patientId;
       const p = APP_STATE.patients[patientId];
       const root = document.getElementById('viewRoot');
-
-      if (!p) {
-        root.innerHTML = `
-          <div class="bg-white p-6 rounded-2xl text-center">
-            <p class="text-sm text-red-500 font-bold">Patient Not Found!</p>
-            <button onclick="navigateTo('')" class="mt-3 text-xs bg-slate-800 text-white px-4 py-2 rounded-xl">Back</button>
-          </div>
-        `;
-        return;
-      }
+      if (!p) { navigateTo(''); return; }
 
       root.innerHTML = `
         <div class="mb-4 flex items-center justify-between">
-          <button onclick="navigateTo('')" class="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1">
-            <i class="fa-solid fa-arrow-left"></i> All Patients
-          </button>
+          <button onclick="navigateTo('')" class="text-xs font-bold text-slate-600">← All Patients</button>
           <div class="flex items-center gap-2">
-            <button onclick="openShareModal('${p.id}')" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-sm">
-              <i class="fa-solid fa-share-nodes"></i> Patient Pass
-            </button>
-            <button onclick="editPatientProfile('${p.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-1.5 rounded-xl">
-              <i class="fa-solid fa-pen"></i>
-            </button>
+            <button onclick="openShareModal('${p.id}')" class="bg-[#0f766e] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm">📲 Patient Pass</button>
+            <button onclick="editPatientProfile('${p.id}')" class="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-1.5 rounded-xl">✏️</button>
           </div>
         </div>
 
-        <div class="bg-gradient-to-br from-brand-700 to-teal-900 text-white p-4 rounded-2xl shadow-sm mb-4">
+        <div class="bg-[#0f766e] text-white p-4 rounded-2xl shadow-sm mb-4">
           <div class="flex justify-between items-start">
             <div>
-              <span class="text-[10px] font-mono bg-white/20 px-2 py-0.5 rounded-md font-semibold tracking-wider">${p.id}</span>
-              <h2 class="text-lg font-bold mt-1 leading-snug">${p.name}</h2>
-              <p class="text-xs text-teal-100 flex items-center gap-2 mt-0.5">
-                <span>📞 ${p.phone}</span>
-                <span>•</span>
-                <span>🩺 ${p.doctor || 'Self / General'}</span>
-              </p>
+              <span class="text-[10px] font-mono bg-white/20 px-2 py-0.5 rounded-md font-semibold">${p.id}</span>
+              <h2 class="text-lg font-bold mt-1">${p.name}</h2>
+              <p class="text-xs text-teal-100 mt-0.5">📞 ${p.phone} • 🩺 ${p.doctor || 'General'}</p>
             </div>
-            <a href="tel:${p.phone}" class="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-xs">
-              <i class="fa-solid fa-phone"></i>
-            </a>
+            <a href="tel:${p.phone}" class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xs">📞</a>
           </div>
-
-          ${p.allergies ? `
-            <div class="mt-3 bg-red-500/25 border border-red-300/40 rounded-xl p-2.5 text-xs text-red-100 flex items-center gap-2">
-              <i class="fa-solid fa-triangle-exclamation text-red-300"></i>
-              <span><b>Allergy Alert:</b> ${p.allergies}</span>
-            </div>
-          ` : ''}
+          ${p.allergies ? `<div class="mt-2 text-xs text-red-100 bg-red-500/30 p-2 rounded-lg font-medium">⚠️ Allergy: ${p.allergies}</div>` : ''}
         </div>
 
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-sm font-bold text-slate-800">Current Medications</h3>
-          <button onclick="openMedModal()" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1 shadow-sm">
-            <i class="fa-solid fa-plus"></i> Add Medicine
-          </button>
+          <button onclick="openMedModal()" class="bg-[#0f766e] text-white text-xs font-bold px-3 py-1.5 rounded-xl">+ Add Medicine</button>
         </div>
 
         <div class="space-y-3">
@@ -941,87 +635,45 @@
 
     async function renderPatientDirectView(patientId, accessKey, repoParam) {
       const root = document.getElementById('viewRoot');
-      root.innerHTML = `
-        <div class="bg-white p-8 rounded-2xl text-center space-y-3 shadow-2xs">
-          <i class="fa-solid fa-circle-notch fa-spin text-2xl text-brand-600"></i>
-          <p class="text-xs font-semibold text-slate-600">Securely loading patient timeline...</p>
-        </div>
-      `;
+      root.innerHTML = `<div class="p-8 text-center text-xs text-slate-500">Loading Patient Timeline...</div>`;
 
       try {
-        if (!patientId) {
-          throw new Error("Invalid link: Missing Patient ID.");
-        }
-
         const repo = repoParam || APP_STATE.config.repo;
         const remote = await GitHubSync.pullRemoteData(repo);
-        
         const records = (remote && remote.data) ? (remote.data.records || remote.data.patients || {}) : {};
-        if (!records[patientId]) {
-          throw new Error(`Record for ${patientId} not found in database.`);
-        }
+        if (!records[patientId]) throw new Error("Patient not found in cloud database.");
 
         const cipherObj = records[patientId];
         let patientData = null;
 
         if (accessKey) {
-          try {
-            patientData = await CryptoEngine.decrypt(cipherObj, accessKey);
-          } catch (e) {}
+          try { patientData = await CryptoEngine.decrypt(cipherObj, accessKey); } catch (e) {}
         }
-
         if (!patientData && APP_STATE.config.pass) {
-          try {
-            patientData = await CryptoEngine.decrypt(cipherObj, APP_STATE.config.pass);
-          } catch (e) {}
+          try { patientData = await CryptoEngine.decrypt(cipherObj, APP_STATE.config.pass); } catch (e) {}
         }
-
         if (!patientData && APP_STATE.patientKeys[patientId]) {
-          try {
-            patientData = await CryptoEngine.decrypt(cipherObj, APP_STATE.patientKeys[patientId]);
-          } catch (e) {}
+          try { patientData = await CryptoEngine.decrypt(cipherObj, APP_STATE.patientKeys[patientId]); } catch (e) {}
         }
 
-        if (!patientData) {
-          throw new Error("Yeh record purani Master Key se lock hai. Store par jakar ise 'Edit -> Save' karein taaki naya patient link ban sake.");
-        }
+        if (!patientData) throw new Error("Record key mismatch. Please re-save from admin counter.");
 
         const activeMeds = (patientData.medicines || []).filter(m => !m.discontinued);
 
         root.innerHTML = `
-          <div class="bg-gradient-to-r from-teal-700 to-brand-800 text-white rounded-2xl p-5 shadow-sm mb-4">
-            <div class="flex justify-between items-center pb-2.5 border-b border-white/20">
-              <span class="text-xs font-mono font-extrabold bg-white/20 px-2.5 py-1 rounded-lg tracking-wider">
-                PATIENT ID: ${patientData.id}
-              </span>
-              <span class="text-[10px] text-teal-200">Shree Ganesh Medicals</span>
-            </div>
-            <h2 class="text-xl font-extrabold mt-2.5 leading-tight">${patientData.name}</h2>
-            <p class="text-xs text-teal-100 mt-1">Consulting Doctor: <b>${patientData.doctor || 'General'}</b></p>
-            ${patientData.allergies ? `<div class="mt-2.5 text-xs text-red-200 bg-red-900/40 p-2 rounded-lg font-medium border border-red-500/30">⚠️ Allergy: ${patientData.allergies}</div>` : ''}
+          <div class="bg-[#0f766e] text-white rounded-2xl p-4 shadow-sm mb-4">
+            <span class="text-[10px] font-mono bg-white/20 px-2 py-0.5 rounded font-bold">${patientData.id}</span>
+            <h2 class="text-lg font-bold mt-1">${patientData.name}</h2>
+            <p class="text-xs text-teal-100">Consulting Doctor: <b>${patientData.doctor || 'General'}</b></p>
           </div>
-
-          <div class="mb-3 flex items-center justify-between">
-            <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide">Aapki Active Dawaiyan (${activeMeds.length})</h3>
-            <span class="text-[10px] text-slate-400">Live Rx Schedule</span>
-          </div>
-
-          <div class="space-y-3">
-            ${renderMedicationList(patientData.medicines || [], true, patientData.created || patientData.lastUpdated)}
-          </div>
-
-          <div class="mt-6 text-center text-xs text-slate-400 space-y-1">
-            <p class="font-bold text-slate-600">Shree Ganesh Medicals, Gondia</p>
-            <p class="text-[10px]">Kisi bhi query ya refill ke liye store par sampark karein.</p>
-          </div>
+          <div class="mb-3 text-xs font-bold text-slate-500 uppercase">Aapki Active Dawaiyan (${activeMeds.length})</div>
+          <div class="space-y-3">${renderMedicationList(patientData.medicines || [], true, patientData.created || patientData.lastUpdated)}</div>
         `;
       } catch (err) {
         root.innerHTML = `
-          <div class="bg-white p-6 rounded-2xl border border-red-200 text-center space-y-3 shadow-2xs">
-            <i class="fa-solid fa-triangle-exclamation text-3xl text-red-500"></i>
-            <h3 class="text-sm font-bold text-slate-800">Decryption / Access Error</h3>
-            <p class="text-xs text-red-600 font-medium">${err.message}</p>
-            <p class="text-[11px] text-slate-500 mt-2">Counter par dashboard open karke patient ko ek bar 'Edit -> Save' karein taaki link re-sync ho jaye.</p>
+          <div class="bg-white p-6 rounded-2xl border border-red-200 text-center space-y-2">
+            <h3 class="text-sm font-bold text-red-600">Access Error</h3>
+            <p class="text-xs text-slate-500">${err.message}</p>
           </div>
         `;
       }
@@ -1029,65 +681,36 @@
 
     function renderMedicationList(meds, isReadOnly = false, patientCreatedDate = null) {
       const activeMeds = (meds || []).filter(m => !m.discontinued);
-      if (activeMeds.length === 0) {
-        return `<div class="bg-white border rounded-2xl p-6 text-center text-xs text-slate-400">No active medicines logged.</div>`;
-      }
+      if (activeMeds.length === 0) return `<div class="bg-white border rounded-2xl p-6 text-center text-xs text-slate-400">No active medicines.</div>`;
 
       return activeMeds.map((m, idx) => {
         const stats = calculateLiveMedStats(m, patientCreatedDate);
-        const mealBadge = getMealBadge(m.meal);
-
         return `
           <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
             <div class="flex justify-between items-start">
               <div>
                 <h4 class="text-sm font-bold text-slate-900">${m.name}</h4>
-                <div class="mt-1 flex flex-wrap gap-1.5 items-center">
-                  ${mealBadge}
-                  <span class="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-                    Total: ${stats.perDay} tab/day
-                  </span>
-                </div>
+                <span class="text-[10px] font-semibold text-slate-500">🍽️ ${m.meal === 'before' ? 'Khaane Se Pehle' : 'Khaane Ke Baad'}</span>
               </div>
               ${!isReadOnly ? `
                 <div class="flex items-center gap-1">
-                  <button onclick="editMedicine(${idx})" class="text-brand-600 hover:text-brand-700 text-xs font-bold px-2 py-1 bg-brand-50 rounded-lg">Edit</button>
-                  <button onclick="stopMedicine(${idx})" class="text-rose-600 hover:text-rose-700 text-xs font-bold px-2 py-1 bg-rose-50 rounded-lg">Stop</button>
+                  <button onclick="editMedicine(${idx})" class="text-[#0f766e] text-xs font-bold px-2 py-1 bg-teal-50 rounded-lg">Edit</button>
+                  <button onclick="stopMedicine(${idx})" class="text-rose-600 text-xs font-bold px-2 py-1 bg-rose-50 rounded-lg">Stop</button>
                 </div>
               ` : ''}
             </div>
-
-            <div class="grid grid-cols-4 gap-1.5 mt-3 text-center">
-              <div class="p-2 rounded-xl border ${m.morn ? 'bg-amber-50 border-amber-200 text-amber-900 font-bold' : 'bg-slate-50 border-slate-100 text-slate-400 opacity-60'} text-[11px]">
-                <div>🌅 Subah</div>
-                <div class="text-xs font-extrabold mt-0.5">${m.morn ? `${m.mornQty || 1} tab` : '-'}</div>
-              </div>
-              <div class="p-2 rounded-xl border ${m.noon ? 'bg-blue-50 border-blue-200 text-blue-900 font-bold' : 'bg-slate-50 border-slate-100 text-slate-400 opacity-60'} text-[11px]">
-                <div>☀️ Dupahar</div>
-                <div class="text-xs font-extrabold mt-0.5">${m.noon ? `${m.noonQty || 1} tab` : '-'}</div>
-              </div>
-              <div class="p-2 rounded-xl border ${m.eve ? 'bg-orange-50 border-orange-200 text-orange-900 font-bold' : 'bg-slate-50 border-slate-100 text-slate-400 opacity-60'} text-[11px]">
-                <div>🌇 Shaam</div>
-                <div class="text-xs font-extrabold mt-0.5">${m.eve ? `${m.eveQty || 1} tab` : '-'}</div>
-              </div>
-              <div class="p-2 rounded-xl border ${m.night ? 'bg-indigo-50 border-indigo-200 text-indigo-900 font-bold' : 'bg-slate-50 border-slate-100 text-slate-400 opacity-60'} text-[11px]">
-                <div>🌙 Raat</div>
-                <div class="text-xs font-extrabold mt-0.5">${m.night ? `${m.nightQty || 0.5} tab` : '-'}</div>
-              </div>
+            <div class="grid grid-cols-4 gap-1.5 mt-3 text-center text-[11px]">
+              <div class="p-1.5 border rounded-lg ${m.morn ? 'bg-amber-50 border-amber-200 font-bold text-amber-900' : 'bg-slate-50 text-slate-400'}">🌅 ${m.morn ? m.mornQty || 1 : '-'}</div>
+              <div class="p-1.5 border rounded-lg ${m.noon ? 'bg-blue-50 border-blue-200 font-bold text-blue-900' : 'bg-slate-50 text-slate-400'}">☀️ ${m.noon ? m.noonQty || 1 : '-'}</div>
+              <div class="p-1.5 border rounded-lg ${m.eve ? 'bg-orange-50 border-orange-200 font-bold text-orange-900' : 'bg-slate-50 text-slate-400'}">🌇 ${m.eve ? m.eveQty || 1 : '-'}</div>
+              <div class="p-1.5 border rounded-lg ${m.night ? 'bg-indigo-50 border-indigo-200 font-bold text-indigo-900' : 'bg-slate-50 text-slate-400'}">🌙 ${m.night ? m.nightQty || 0.5 : '-'}</div>
             </div>
-
-            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span class="text-slate-500 font-medium">Live Stock: <b>${stats.remainingTabs} tabs</b></span>
-              <span class="font-bold px-2 py-0.5 rounded-md ${stats.daysLeft <= 3 ? 'bg-rose-100 text-rose-800' : (stats.daysLeft <= 7 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700')}">
-                ${stats.daysLeft <= 3 ? `🚨 Refill in ${stats.daysLeft} din` : `✅ ~${stats.daysLeft} din ka dose`}
+            <div class="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="text-slate-500">Live Stock: <b>${stats.remainingTabs} tabs</b></span>
+              <span class="font-bold px-2 py-0.5 rounded-md ${stats.daysLeft <= 3 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-50 text-emerald-700'}">
+                ${stats.daysLeft <= 3 ? `🚨 Refill in ${stats.daysLeft} din` : `✅ ~${stats.daysLeft} din baaki`}
               </span>
             </div>
-
-            ${m.instructions ? `
-              <div class="mt-2 text-[11px] text-slate-600 bg-slate-50 p-2 rounded-lg">
-                💡 <b>Note:</b> ${m.instructions}
-              </div>
-            ` : ''}
           </div>
         `;
       }).join('');
@@ -1099,20 +722,15 @@
 
       return `
         <div class="mt-6 pt-4 border-t border-slate-200">
-          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3 flex items-center gap-1.5">
-            <i class="fa-solid fa-clock-rotate-left"></i> Doctor Revised & Stopped Prescriptions
-          </h3>
+          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">🕒 Stopped & Revised Prescriptions</h3>
           <div class="space-y-2">
             ${revisedMeds.map(m => `
               <div class="bg-slate-100 border border-slate-200 rounded-xl p-3 text-xs">
                 <div class="flex justify-between items-center">
-                  <span class="font-bold text-slate-700 ${m.discontinued ? 'line-through text-slate-400' : ''}">${m.name}</span>${m.discontinued ? '<span class="text-[10px] font-bold bg-rose-200 text-rose-800 px-2 py-0.5 rounded">Stopped</span>' : '<span class="text-[10px] font-bold bg-amber-200 text-amber-800 px-2 py-0.5 rounded">Revised</span>'}
+                  <span class="font-bold text-slate-700 ${m.discontinued ? 'line-through text-slate-400' : ''}">${m.name}</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded ${m.discontinued ? 'bg-rose-200 text-rose-800' : 'bg-amber-200 text-amber-800'}">${m.discontinued ? 'Stopped' : 'Revised'}</span>
                 </div>
-                ${(m.history || []).map(h => `
-                  <div class="mt-1 text-[11px] text-slate-600 border-l-2 border-slate-300 pl-2">
-                    <b>${h.date}:</b> ${h.reason}
-                  </div>
-                `).join('')}
+                ${(m.history || []).map(h => `<div class="mt-1 text-[11px] text-slate-600 pl-2 border-l-2 border-slate-300"><b>${h.date}:</b> ${h.reason}</div>`).join('')}
               </div>
             `).join('')}
           </div>
@@ -1120,29 +738,10 @@
       `;
     }
 
-    function calculateTotalPerDay(m) {
-      let sum = 0;
-      if (m.morn) sum += parseFloat(m.mornQty || 1);
-      if (m.noon) sum += parseFloat(m.noonQty || 1);
-      if (m.eve) sum += parseFloat(m.eveQty || 1);
-      if (m.night) sum += parseFloat(m.nightQty || 0.5);
-      return sum > 0 ? sum : 1;
-    }
-
-    function getMealBadge(mealType) {
-      if (mealType === 'before') {
-        return `<span class="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md">🥣 Khaane Se Pehle</span>`;
-      } else if (mealType === 'with') {
-        return `<span class="text-[10px] font-bold bg-purple-100 text-purple-800 px-2 py-0.5 rounded-md">🥗 Khaate Waqt</span>`;
-      }
-      return `<span class="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md">🍽️ Khaane Ke Baad</span>`;
-    }
-
     // ==========================================
-    // 8. PATIENT & MEDICINE CRUD
+    // 6. PATIENT & MEDICINE ACTIONS
     // ==========================================
     function openPatientModal(editId = null) {
-      const title = document.getElementById('patientModalTitle');
       const formId = document.getElementById('pFormId');
       const formName = document.getElementById('pFormName');
       const formPhone = document.getElementById('pFormPhone');
@@ -1152,7 +751,6 @@
 
       if (editId && APP_STATE.patients[editId]) {
         const p = APP_STATE.patients[editId];
-        title.innerHTML = '<i class="fa-solid fa-user-pen text-brand-600"></i> Edit Patient';
         formId.value = p.id;
         formName.value = p.name;
         formPhone.value = p.phone;
@@ -1160,7 +758,6 @@
         formDiag.value = p.conditions || '';
         formAllergies.value = p.allergies || '';
       } else {
-        title.innerHTML = '<i class="fa-solid fa-user-plus text-brand-600"></i> New Patient Profile';
         formId.value = '';
         formName.value = '';
         formPhone.value = '';
@@ -1171,9 +768,7 @@
       openModal('patientModal');
     }
 
-    function editPatientProfile(id) {
-      openPatientModal(id);
-    }
+    function editPatientProfile(id) { openPatientModal(id); }
 
     async function handlePatientFormSubmit(e) {
       e.preventDefault();
@@ -1203,17 +798,13 @@
       APP_STATE.patients[patientId] = patientData;
       saveLocalData();
       closeModal('patientModal');
-
       showToast(isNew ? `Patient ${patientId} profile created!` : 'Patient details updated!');
       renderAdminDashboard();
 
-      if (APP_STATE.config.token && APP_STATE.config.pass) {
-        await saveToGitHubCloud();
-      }
+      if (APP_STATE.config.token && APP_STATE.config.pass) await saveToGitHubCloud();
     }
 
     function openMedModal() {
-      document.getElementById('medModalTitle').innerHTML = '<i class="fa-solid fa-pills text-brand-600"></i> Add Medicine';
       document.getElementById('medEditIndex').value = '-1';
       document.getElementById('medExistingStartDate').value = '';
       document.getElementById('mName').value = '';
@@ -1221,20 +812,13 @@
       document.getElementById('noonCheck').checked = false;
       document.getElementById('eveCheck').checked = false;
       document.getElementById('nightCheck').checked = false;
-      toggleDoseQtyInput('morn');
-      toggleDoseQtyInput('noon');
-      toggleDoseQtyInput('eve');
-      toggleDoseQtyInput('night');
-
+      toggleDoseQty('morn'); toggleDoseQty('noon'); toggleDoseQty('eve'); toggleDoseQty('night');
       document.getElementById('mMeal').value = 'after';
       document.getElementById('mTotalQty').value = '30';
       document.getElementById('mInstructions').value = '';
-
       document.getElementById('isDoctorRevised').checked = false;
       document.getElementById('reviseReasonWrap').classList.add('hidden');
-      document.getElementById('mChangeReason').value = '';
       document.getElementById('reviseContainer').classList.add('hidden');
-
       openModal('medModal');
     }
 
@@ -1242,56 +826,39 @@
       const p = APP_STATE.patients[APP_STATE.currentPatientId];
       const m = p.medicines[idx];
 
-      document.getElementById('medModalTitle').innerHTML = '<i class="fa-solid fa-pen text-brand-600"></i> Edit Medicine Dose';
       document.getElementById('medEditIndex').value = idx;
       document.getElementById('medExistingStartDate').value = m.startDate || '';
       document.getElementById('mName').value = m.name;
-
       document.getElementById('mornCheck').checked = !!m.morn;
       document.getElementById('mornQty').value = m.mornQty || 1;
-      toggleDoseQtyInput('morn');
-
+      toggleDoseQty('morn');
       document.getElementById('noonCheck').checked = !!m.noon;
       document.getElementById('noonQty').value = m.noonQty || 1;
-      toggleDoseQtyInput('noon');
-
+      toggleDoseQty('noon');
       document.getElementById('eveCheck').checked = !!m.eve;
       document.getElementById('eveQty').value = m.eveQty || 1;
-      toggleDoseQtyInput('eve');
-
+      toggleDoseQty('eve');
       document.getElementById('nightCheck').checked = !!m.night;
       document.getElementById('nightQty').value = m.nightQty || 0.5;
-      toggleDoseQtyInput('night');
-
+      toggleDoseQty('night');
       document.getElementById('mMeal').value = m.meal || 'after';
       document.getElementById('mTotalQty').value = m.initialQty !== undefined ? m.initialQty : m.qty;
       document.getElementById('mInstructions').value = m.instructions || '';
-
       document.getElementById('reviseContainer').classList.remove('hidden');
       document.getElementById('isDoctorRevised').checked = false;
       document.getElementById('reviseReasonWrap').classList.add('hidden');
-      document.getElementById('mChangeReason').value = '';
-
       openModal('medModal');
     }
 
-    function toggleDoseQtyInput(slot) {
+    function toggleDoseQty(slot) {
       const isChecked = document.getElementById(`${slot}Check`).checked;
       const wrap = document.getElementById(`${slot}QtyWrap`);
-      if (isChecked) {
-        wrap.classList.remove('hidden');
-      } else {
-        wrap.classList.add('hidden');
-      }
+      if (isChecked) wrap.classList.remove('hidden'); else wrap.classList.add('hidden');
     }
 
-    function toggleRevisionNote(isChecked) {
+    function toggleRevNote(isChecked) {
       const wrap = document.getElementById('reviseReasonWrap');
-      if (isChecked) {
-        wrap.classList.remove('hidden');
-      } else {
-        wrap.classList.add('hidden');
-      }
+      if (isChecked) wrap.classList.remove('hidden'); else wrap.classList.add('hidden');
     }
 
     async function handleMedicineFormSubmit(e) {
@@ -1299,9 +866,7 @@
       const p = APP_STATE.patients[APP_STATE.currentPatientId];
       const editIdx = parseInt(document.getElementById('medEditIndex').value);
       const existingStartDate = document.getElementById('medExistingStartDate').value;
-
       const isRevisedChecked = document.getElementById('isDoctorRevised').checked;
-      const revisionReason = document.getElementById('mChangeReason').value.trim() || 'Dose revised by physician';
       const enteredQty = parseFloat(document.getElementById('mTotalQty').value) || 0;
 
       const medData = {
@@ -1326,25 +891,18 @@
       if (!p.medicines) p.medicines = [];
 
       if (editIdx > -1) {
-        const oldMed = p.medicines[editIdx];
+        const old = p.medicines[editIdx];
         if (isRevisedChecked) {
-          medData.history = oldMed.history || [];
-          medData.history.unshift({
-            date: new Date().toLocaleDateString(),
-            reason: `${revisionReason} (Previous: ${oldMed.name}, Qty: ${oldMed.initialQty || oldMed.qty})`
-          });
+          medData.history = old.history || [];
+          medData.history.unshift({ date: new Date().toLocaleDateString(), reason: document.getElementById('mChangeReason').value.trim() || 'Dose revised' });
           medData.startDate = Date.now();
         } else {
-          medData.history = oldMed.history || [];
-          if (oldMed.initialQty !== enteredQty) {
-            medData.startDate = Date.now();
-          }
+          medData.history = old.history || [];
+          if (old.initialQty !== enteredQty) medData.startDate = Date.now();
         }
         p.medicines[editIdx] = medData;
-        showToast(isRevisedChecked ? 'Medicine marked as Doctor Revised!' : 'Medicine updated!');
       } else {
         p.medicines.push(medData);
-        showToast('Medicine added to prescription!');
       }
 
       p.lastUpdated = Date.now();
@@ -1352,35 +910,23 @@
       closeModal('medModal');
       renderAdminPatientView(p.id);
 
-      if (APP_STATE.config.token && APP_STATE.config.pass) {
-        await saveToGitHubCloud();
-      }
+      if (APP_STATE.config.token && APP_STATE.config.pass) await saveToGitHubCloud();
     }
 
     function stopMedicine(idx) {
       const p = APP_STATE.patients[APP_STATE.currentPatientId];
-      const reason = prompt("Dawai band karne ka kaaran (Stop Reason):", "Course completed / Doctor advised to stop");
+      const reason = prompt("Stop Reason:", "Doctor advised to stop");
       if (reason === null) return;
-
       p.medicines[idx].discontinued = true;
       if (!p.medicines[idx].history) p.medicines[idx].history = [];
-      p.medicines[idx].history.unshift({
-        date: new Date().toLocaleDateString(),
-        reason: `Dawai Band Ki Gayi: ${reason}`
-      });
-
-      p.lastUpdated = Date.now();
+      p.medicines[idx].history.unshift({ date: new Date().toLocaleDateString(), reason: `Dawai Band Ki Gayi: ${reason}` });
       saveLocalData();
       renderAdminPatientView(p.id);
-      showToast('Medicine moved to stopped history');
-
-      if (APP_STATE.config.token && APP_STATE.config.pass) {
-        await saveToGitHubCloud();
-      }
+      if (APP_STATE.config.token && APP_STATE.config.pass) saveToGitHubCloud();
     }
 
     // ==========================================
-    // 9. PATIENT PASS & QR
+    // 7. PATIENT PASS & SHARING
     // ==========================================
     function openShareModal(patientId) {
       const p = APP_STATE.patients[patientId];
@@ -1398,47 +944,29 @@
       const baseAppUrl = window.location.href.split('#')[0];
       const shareUrl = `${baseAppUrl}#/view?id=${p.id}&k=${accessKey}&repo=${encodeURIComponent(APP_STATE.config.repo)}`;
 
-      new QRCode(canvas, {
-        text: shareUrl,
-        width: 180,
-        height: 180,
-        colorDark: "#0f766e",
-        colorLight: "#ffffff",
-        correctLevel: QRCode.CorrectLevel.M
-      });
+      new QRCode(canvas, { text: shareUrl, width: 160, height: 160, colorDark: "#0f766e", colorLight: "#ffffff" });
 
-      const messageText = `Namaste ${p.name} ji,\nShree Ganesh Medicals se aapka Digital Prescription Timeline Link yeh raha:\n${shareUrl}\n\nPatient ID: ${p.id}\nIsko click karke aap dekh sakte hain ki konsi dawai kab leni hai.`;
-      const waBtn = document.getElementById('modalWaBtn');
-      waBtn.onclick = () => window.open(`https://wa.me/91${p.phone}?text=${encodeURIComponent(messageText)}`, '_blank');
-
-      openModal('shareModal');
+      const msg = `Namaste ${p.name} ji,\nShree Ganesh Medicals se aapka Digital Rx Link yeh raha:\n${shareUrl}\n\nPatient ID: ${p.id}`;
+      document.getElementById('modalWaBtn').onclick = () => window.open(`https://wa.me/91${p.phone}?text=${encodeURIComponent(msg)}`, '_blank');
       window.currentShareUrl = shareUrl;
+      openModal('shareModal');
     }
 
     function copyShareUrl() {
       if (window.currentShareUrl) {
         navigator.clipboard.writeText(window.currentShareUrl);
-        showToast('Link copied to clipboard!');
+        showToast('Link copied!');
       }
     }
 
     // ==========================================
-    // 10. DUAL BACKWARD-COMPATIBLE CLOUD SYNC
+    // 8. CLOUD SYNC & BACKUP
     // ==========================================
     async function manualSync(silent = false) {
-      const spinner = document.getElementById('syncSpinner');
-      spinner.classList.add('fa-spin');
-
       try {
         const { token, repo, pass } = APP_STATE.config;
-        if (!token || !repo) {
-          if (!silent) openModal('settingsModal');
-          return;
-        }
-        if (!pass) {
-          if (!silent) alert("Settings me Master Passphrase enter karein!");
-          return;
-        }
+        if (!token || !repo) { if (!silent) openModal('settingsModal'); return; }
+        if (!pass) { if (!silent) alert("Enter Master Key in settings!"); return; }
 
         const remote = await GitHubSync.pullRemoteData();
         if (remote && remote.data) {
@@ -1448,35 +976,26 @@
           if (cloudKeyReg) {
             try {
               const decryptedKeys = await CryptoEngine.decrypt(cloudKeyReg, pass);
-              APP_STATE.patientKeys = { ...APP_STATE.patientKeys, ...decryptedKeys };
-            } catch (e) {
-              console.warn("Key registry decrypt check:", e);
-            }
+              APP_STATE.patientKeys = Object.assign({}, APP_STATE.patientKeys, decryptedKeys);
+            } catch (e) {}
           }
 
           let count = 0;
-
           for (let id in cloudRecords) {
             const cipherObj = cloudRecords[id];
             let decryptedPatient = null;
 
             const pKey = APP_STATE.patientKeys[id];
             if (pKey) {
-              try {
-                decryptedPatient = await CryptoEngine.decrypt(cipherObj, pKey);
-              } catch (e) {}
+              try { decryptedPatient = await CryptoEngine.decrypt(cipherObj, pKey); } catch (e) {}
             }
 
             if (!decryptedPatient) {
               try {
                 decryptedPatient = await CryptoEngine.decrypt(cipherObj, pass);
-                if (!decryptedPatient.accessKey) {
-                  decryptedPatient.accessKey = CryptoEngine.generateKey(24);
-                }
+                if (!decryptedPatient.accessKey) decryptedPatient.accessKey = CryptoEngine.generateKey(24);
                 APP_STATE.patientKeys[id] = decryptedPatient.accessKey;
-              } catch (e) {
-                console.warn(`Record ${id} decrypt nahi ho paya.`);
-              }
+              } catch (e) {}
             }
 
             if (decryptedPatient) {
@@ -1487,12 +1006,10 @@
 
           saveLocalData();
           if (!APP_STATE.isPatientView) renderAdminDashboard();
-          if (!silent) showToast(`Synced ${count} patient records from GitHub!`);
+          if (!silent) showToast(`Synced ${count} patient records!`);
         }
       } catch (err) {
         if (!silent) alert('Sync Error: ' + err.message);
-      } finally {
-        spinner.classList.remove('fa-spin');
       }
     }
 
@@ -1508,27 +1025,72 @@
         for (let id in APP_STATE.patients) {
           const p = APP_STATE.patients[id];
           let pKey = p.accessKey || APP_STATE.patientKeys[id];
-          if (!pKey) {
-            pKey = CryptoEngine.generateKey(24);
-            p.accessKey = pKey;
-            APP_STATE.patientKeys[id] = pKey;
-          }
-          const encPayload = await CryptoEngine.encrypt(p, pKey);
-          cloudJson.records[id] = encPayload;
+          if (!pKey) { pKey = CryptoEngine.generateKey(24); p.accessKey = pKey; APP_STATE.patientKeys[id] = pKey; }
+          cloudJson.records[id] = await CryptoEngine.encrypt(p, pKey);
         }
 
-        const encKeyReg = await CryptoEngine.encrypt(APP_STATE.patientKeys, pass);
-        cloudJson.keyRegistry = encKeyReg;
+        cloudJson.keyRegistry = await CryptoEngine.encrypt(APP_STATE.patientKeys, pass);
         cloudJson.updated_at = new Date().toISOString();
 
         await GitHubSync.pushRemoteData(cloudJson);
-        showToast("GitHub Live Sync Successful! ✅");
+        showToast("Cloud sync successful! ✅");
       } catch (err) {
-        console.error("Cloud push failed:", err);
-        showToast("Cloud sync failed: " + err.message);
+        showToast("Cloud sync error: " + err.message);
       }
     }
 
+    function exportToExcel() {
+      const patients = Object.values(APP_STATE.patients || {});
+      if (patients.length === 0) return alert("No patient data!");
+
+      const rows = [["Patient ID", "Name", "Phone", "Doctor", "Medicine", "Live Stock", "Per Day", "Days Left"]];
+      patients.forEach(p => {
+        (p.medicines || []).forEach(m => {
+          const stats = calculateLiveMedStats(m, p.created || p.lastUpdated);
+          rows.push([`"${p.id}"`, `"${p.name}"`, `"${p.phone}"`, `"${p.doctor || ''}"`, `"${m.name}"`, `"${stats.remainingTabs}"`, `"${stats.perDay}"`, `"${stats.daysLeft}"`]);
+        });
+      });
+
+      const blob = new Blob(["\uFEFF" + rows.map(r => r.join(",")).join("\r\n")], { type: "text/csv;charset=utf-8;" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `SGM_Patients_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+    }
+
+    function downloadJsonBackup() {
+      const blob = new Blob([JSON.stringify({ patients: APP_STATE.patients, patientKeys: APP_STATE.patientKeys }, null, 2)], { type: "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `SGM_Backup_${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+    }
+
+    function restoreJsonBackup(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const json = JSON.parse(e.target.result);
+          if (json.patients) {
+            APP_STATE.patients = json.patients;
+            if (json.patientKeys) APP_STATE.patientKeys = json.patientKeys;
+            saveLocalData();
+            renderAdminDashboard();
+            closeModal('settingsModal');
+            showToast("Backup restored!");
+            if (APP_STATE.config.token && APP_STATE.config.pass) await saveToGitHubCloud();
+          }
+        } catch (err) { alert("Restore Failed"); }
+      };
+      reader.readAsText(file);
+      event.target.value = '';
+    }
+
+    // ==========================================
+    // 9. HELPERS & ROUTER INITIALIZER
+    // ==========================================
     function saveLocalData() {
       localStorage.setItem('sgm_patients', JSON.stringify(APP_STATE.patients));
       localStorage.setItem('sgm_p_keys', JSON.stringify(APP_STATE.patientKeys));
@@ -1543,7 +1105,7 @@
       };
       localStorage.setItem('sgm_cfg', JSON.stringify(APP_STATE.config));
       closeModal('settingsModal');
-      showToast('Settings saved. Syncing with GitHub...');
+      showToast('Settings saved. Syncing...');
       manualSync();
     }
 
@@ -1554,67 +1116,61 @@
       document.getElementById('cfgPass').value = APP_STATE.config.pass || '';
     }
 
-    // ==========================================
-    // 11. UI & PWA INSTALLATION
-    // ==========================================
     function navigateTo(hash) { window.location.hash = hash; }
     function navigateHome() { if (!APP_STATE.isPatientView) navigateTo(''); }
-    function openModal(id) {
-      const el = document.getElementById(id);
-      el.classList.remove('hidden');
-      el.classList.add('flex');
-    }
-    function closeModal(id) {
-      const el = document.getElementById(id);
-      el.classList.add('hidden');
-      el.classList.remove('flex');
-    }
+    function openModal(id) { const el = document.getElementById(id); el.classList.remove('hidden'); el.classList.add('flex'); }
+    function closeModal(id) { const el = document.getElementById(id); el.classList.add('hidden'); el.classList.remove('flex'); }
 
     function showToast(msg) {
       const c = document.getElementById('toastContainer');
       const toast = document.createElement('div');
-      toast.className = 'bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 pointer-events-auto transition-all';
-      toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> ${msg}`;
+      toast.className = 'bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg';
+      toast.innerText = msg;
       c.appendChild(toast);
-      setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2500);
+      setTimeout(() => { toast.remove(); }, 2500);
     }
 
     function filterPatients(query) {
       const q = query.toLowerCase();
       const filtered = Object.values(APP_STATE.patients || {}).filter(p => 
-        p.name.toLowerCase().includes(q) ||
-        p.phone.includes(q) ||
-        p.id.toLowerCase().includes(q) ||
-        (p.conditions && p.conditions.toLowerCase().includes(q))
+        p.name.toLowerCase().includes(q) || p.phone.includes(q) || p.id.toLowerCase().includes(q)
       );
       document.getElementById('patientListContainer').innerHTML = renderPatientCardList(filtered);
     }
 
-    function setupPWA() {
-      window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        APP_STATE.deferredPrompt = e;
-        document.getElementById('pwaBanner').classList.remove('hidden');
-      });
+    async function router() {
+      try {
+        const hash = window.location.hash || '';
+        if (hash.startsWith('#/view')) {
+          APP_STATE.isPatientView = true;
+          document.getElementById('headerEnvTag').innerText = 'Patient Pass';
+          document.getElementById('topExportBtn').style.display = 'none';
+          document.getElementById('topSyncBtn').style.display = 'none';
+          document.getElementById('topSettingsBtn').style.display = 'none';
 
-      if ('serviceWorker' in navigator) {
-        const swBlob = new Blob([`
-          self.addEventListener('install', e => self.skipWaiting());
-          self.addEventListener('activate', e => self.clients.claim());
-          self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
-        `], { type: 'application/javascript' });
-        navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+          const params = new URLSearchParams(hash.split('?')[1]);
+          await renderPatientDirectView(params.get('id'), params.get('k'), params.get('repo'));
+        } else if (hash.startsWith('#/patient/')) {
+          APP_STATE.isPatientView = false;
+          renderAdminPatientView(hash.replace('#/patient/', ''));
+        } else {
+          APP_STATE.isPatientView = false;
+          renderAdminDashboard();
+        }
+      } catch (e) {
+        console.error(e);
+        renderAdminDashboard();
       }
     }
 
-    function installPWA() {
-      if (APP_STATE.deferredPrompt) {
-        APP_STATE.deferredPrompt.prompt();
-        APP_STATE.deferredPrompt.userChoice.then(() => {
-          document.getElementById('pwaBanner').classList.add('hidden');
-        });
+    window.addEventListener('hashchange', router);
+    window.addEventListener('DOMContentLoaded', async () => {
+      populateSettingsForm();
+      await router();
+      if (!APP_STATE.isPatientView && APP_STATE.config.token && APP_STATE.config.pass) {
+        manualSync(true);
       }
-    }
+    });
   </script>
 </body>
 </html>
