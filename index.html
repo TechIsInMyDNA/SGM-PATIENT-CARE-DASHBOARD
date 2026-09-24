@@ -197,6 +197,7 @@
 
       <form onsubmit="handleMedicineFormSubmit(event)" class="mt-4 space-y-4 text-sm">
         <input type="hidden" id="medEditIndex" value="-1">
+        <input type="hidden" id="medExistingStartDate" value="">
 
         <div>
           <label class="block text-xs font-semibold text-slate-600 mb-1">Medicine Name & Strength *</label>
@@ -258,7 +259,7 @@
             </select>
           </div>
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Current Stock (Tabs/Qty) *</label>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Current Stock (Total Tabs) *</label>
             <input type="number" id="mTotalQty" required min="0" step="1" placeholder="e.g. 30" class="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500">
           </div>
         </div>
@@ -524,7 +525,38 @@
     };
 
     // ==========================================
-    // 4. EXCEL EXPORT & BACKUP / RESTORE
+    // 4. CALENDAR-BASED DAILY STOCK CALCULATOR
+    // ==========================================
+    function calculateLiveMedStats(m, patientCreatedDate) {
+      const perDay = calculateTotalPerDay(m);
+      if (perDay <= 0) {
+        return { remainingTabs: m.qty || 0, daysLeft: 999, perDay: 0 };
+      }
+
+      // Base issue date (fallback to patient creation date or now)
+      const startTimestamp = m.startDate || m.lastRefillDate || patientCreatedDate || Date.now();
+      const now = Date.now();
+
+      // Number of calendar days elapsed since tablets were provided
+      const elapsedDays = Math.max(0, Math.floor((now - startTimestamp) / (1000 * 60 * 60 * 24)));
+
+      // Daily consumed tabs
+      const consumedTabs = elapsedDays * perDay;
+      const initialQty = parseFloat(m.initialQty || m.qty || 0);
+
+      const remainingTabs = Math.max(0, initialQty - consumedTabs);
+      const daysLeft = Math.max(0, Math.floor(remainingTabs / perDay));
+
+      return {
+        remainingTabs: remainingTabs % 1 === 0 ? remainingTabs : remainingTabs.toFixed(1),
+        daysLeft: daysLeft,
+        perDay: perDay,
+        elapsedDays: elapsedDays
+      };
+    }
+
+    // ==========================================
+    // 5. EXCEL EXPORT & BACKUP / RESTORE
     // ==========================================
     function exportToExcel() {
       const patients = Object.values(APP_STATE.patients);
@@ -535,7 +567,7 @@
       const headers = [
         "Patient ID", "Patient Name", "Phone", "Doctor", "Conditions", "Allergies",
         "Medicine Name", "Subah (Morning)", "Dupahar (Afternoon)", "Shaam (Evening)", "Raat (Night)",
-        "Meal Relation", "Current Stock (Tabs)", "Per Day Consumption", "Days Left", "Status", "Remarks"
+        "Meal Relation", "Initial Stock", "Live Stock Remaining", "Per Day Consumption", "Days Left", "Status", "Remarks"
       ];
 
       const rows = [];
@@ -546,12 +578,11 @@
         if (meds.length === 0) {
           rows.push([
             `"${p.id}"`, `"${p.name}"`, `"${p.phone}"`, `"${p.doctor || ''}"`, `"${p.conditions || ''}"`, `"${p.allergies || ''}"`,
-            `"No medicines logged"`, "", "", "", "", "", "", "", "", "", ""
+            `"No medicines logged"`, "", "", "", "", "", "", "", "", "", "", ""
           ].join(","));
         } else {
           meds.forEach(m => {
-            const perDay = calculateTotalPerDay(m);
-            const daysLeft = perDay > 0 ? Math.floor(m.qty / perDay) : 0;
+            const stats = calculateLiveMedStats(m, p.created || p.lastUpdated);
             const mealText = m.meal === 'before' ? 'Khaane Se Pehle' : (m.meal === 'with' ? 'Khaate Waqt' : 'Khaane Ke Baad');
             const status = m.discontinued ? 'DISCONTINUED' : 'ACTIVE';
 
@@ -568,9 +599,10 @@
               `"${m.eve ? m.eveQty || 1 : 0}"`,
               `"${m.night ? m.nightQty || 0.5 : 0}"`,
               `"${mealText}"`,
-              `"${m.qty}"`,
-              `"${perDay}"`,
-              `"${daysLeft}"`,
+              `"${m.initialQty || m.qty}"`,
+              `"${stats.remainingTabs}"`,
+              `"${stats.perDay}"`,
+              `"${stats.daysLeft}"`,
               `"${status}"`,
               `"${(m.instructions || '').replace(/"/g, '""')}"`
             ].join(","));
@@ -644,7 +676,7 @@
     }
 
     // ==========================================
-    // 5. ROUTER & CONTROLLER
+    // 6. ROUTER & CONTROLLER
     // ==========================================
     async function router() {
       const hash = window.location.hash || '';
@@ -683,33 +715,31 @@
     });
 
     // ==========================================
-    // 6. VIEW RENDERING (DAILY STOCK REMAINING INCLUDED)
+    // 7. VIEW RENDERING (DAILY STOCK TRACKER WITH CALENDAR DEDUCTION)
     // ==========================================
     function renderAdminDashboard() {
       const root = document.getElementById('viewRoot');
       const patients = Object.values(APP_STATE.patients);
 
-      // Collect ALL active medicines with days calculation
       const allActiveMedications = [];
       patients.forEach(p => {
         (p.medicines || []).forEach(m => {
           if (!m.discontinued) {
-            const perDay = calculateTotalPerDay(m);
-            const daysLeft = perDay > 0 ? Math.floor(m.qty / perDay) : 999;
+            const stats = calculateLiveMedStats(m, p.created || p.lastUpdated);
             allActiveMedications.push({
               patientId: p.id,
               patientName: p.name,
               patientPhone: p.phone,
               medName: m.name,
-              qty: m.qty,
-              perDay: perDay,
-              daysLeft: daysLeft
+              remainingTabs: stats.remainingTabs,
+              perDay: stats.perDay,
+              daysLeft: stats.daysLeft
             });
           }
         });
       });
 
-      // Sort by least days left on top
+      // Sort with least days remaining at the top
       allActiveMedications.sort((a, b) => a.daysLeft - b.daysLeft);
 
       let dailyStockHtml = '';
@@ -721,7 +751,7 @@
                 <i class="fa-solid fa-hourglass-half text-brand-600"></i> 
                 Daily Stock & Refill Tracker (${allActiveMedications.length} Medicines)
               </h3>
-              <span class="text-[10px] text-slate-400 font-medium">Bache Hue Din</span>
+              <span class="text-[10px] text-slate-400 font-medium">Auto Daily Countdown</span>
             </div>
             
             <div class="space-y-2.5 max-h-72 overflow-y-auto pr-1">
@@ -746,7 +776,7 @@
                       </div>
                       <div class="text-[11px] font-semibold text-brand-700">${r.medName}</div>
                       <div class="text-[10px] text-slate-500 font-medium">
-                        Total Stock: <b>${r.qty} tabs</b> • Dose: <b>${r.perDay} tab/day</b>
+                        Live Stock: <b>${r.remainingTabs} tabs</b> • Dose: <b>${r.perDay} tab/day</b>
                       </div>
                     </div>
 
@@ -758,7 +788,7 @@
                         <a href="tel:${r.patientPhone}" class="w-7 h-7 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center text-xs" title="Call Patient">
                           <i class="fa-solid fa-phone"></i>
                         </a>
-                        <a href="https://wa.me/91${r.patientPhone}?text=${encodeURIComponent(`Namaste ${r.patientName} ji,\nShree Ganesh Medicals se reminder:\nAapki dawai *${r.medName}* ka stock lagbhag *${r.daysLeft} din* ka bacha hai (${r.qty} tabs baaki).\nKripya samay par regular refill kara lein.`)}" target="_blank" class="w-7 h-7 rounded-lg bg-[#25D366] hover:bg-[#20ba5a] text-white flex items-center justify-center text-xs" title="WhatsApp Reminder">
+                        <a href="https://wa.me/91${r.patientPhone}?text=${encodeURIComponent(`Namaste ${r.patientName} ji,\nShree Ganesh Medicals se reminder:\nAapki dawai *${r.medName}* ka stock lagbhag *${r.daysLeft} din* ka bacha hai (${r.remainingTabs} tabs baaki).\nKripya regular dose ke liye samay par refill kara lein.`)}" target="_blank" class="w-7 h-7 rounded-lg bg-[#25D366] hover:bg-[#20ba5a] text-white flex items-center justify-center text-xs" title="WhatsApp Reminder">
                           <i class="fa-brands fa-whatsapp"></i>
                         </a>
                       </div>
@@ -899,7 +929,7 @@
         </div>
 
         <div class="space-y-3">
-          ${renderMedicationList(p.medicines || [])}
+          ${renderMedicationList(p.medicines || [], false, p.created || p.lastUpdated)}
         </div>
 
         ${renderRevisedHistorySection(p.medicines || [])}
@@ -974,7 +1004,7 @@
           </div>
 
           <div class="space-y-3">
-            ${renderMedicationList(patientData.medicines || [], true)}
+            ${renderMedicationList(patientData.medicines || [], true, patientData.created || patientData.lastUpdated)}
           </div>
 
           <div class="mt-6 text-center text-xs text-slate-400 space-y-1">
@@ -994,15 +1024,14 @@
       }
     }
 
-    function renderMedicationList(meds, isReadOnly = false) {
+    function renderMedicationList(meds, isReadOnly = false, patientCreatedDate = null) {
       const activeMeds = meds.filter(m => !m.discontinued);
       if (activeMeds.length === 0) {
         return `<div class="bg-white border rounded-2xl p-6 text-center text-xs text-slate-400">No active medicines logged.</div>`;
       }
 
       return activeMeds.map((m, idx) => {
-        const perDay = calculateTotalPerDay(m);
-        const daysLeft = perDay > 0 ? Math.floor(m.qty / perDay) : 999;
+        const stats = calculateLiveMedStats(m, patientCreatedDate);
         const mealBadge = getMealBadge(m.meal);
 
         return `
@@ -1013,7 +1042,7 @@
                 <div class="mt-1 flex flex-wrap gap-1.5 items-center">
                   ${mealBadge}
                   <span class="text-[11px] font-semibold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">
-                    Total: ${perDay} tab/day
+                    Total: ${stats.perDay} tab/day
                   </span>
                 </div>
               </div>
@@ -1045,9 +1074,9 @@
             </div>
 
             <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span class="text-slate-500 font-medium">Bachi hui: <b>${m.qty} tabs</b></span>
-              <span class="font-bold px-2 py-0.5 rounded-md ${daysLeft <= 3 ? 'bg-rose-100 text-rose-800' : (daysLeft <= 7 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700')}">
-                ${daysLeft <= 3 ? `🚨 Refill in ${daysLeft} din` : `✅ ~${daysLeft} din ka dose`}
+              <span class="text-slate-500 font-medium">Live Stock: <b>${stats.remainingTabs} tabs</b></span>
+              <span class="font-bold px-2 py-0.5 rounded-md ${stats.daysLeft <= 3 ? 'bg-rose-100 text-rose-800' : (stats.daysLeft <= 7 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-700')}">
+                ${stats.daysLeft <= 3 ? `🚨 Refill in ${stats.daysLeft} din` : `✅ ~${stats.daysLeft} din ka dose`}
               </span>
             </div>
 
@@ -1107,7 +1136,7 @@
     }
 
     // ==========================================
-    // 7. PATIENT & MEDICINE CRUD
+    // 8. PATIENT & MEDICINE CRUD
     // ==========================================
     function openPatientModal(editId = null) {
       const title = document.getElementById('patientModalTitle');
@@ -1164,6 +1193,7 @@
         allergies: document.getElementById('pFormAllergies').value.trim(),
         accessKey: key,
         medicines: isNew ? [] : (APP_STATE.patients[patientId].medicines || []),
+        created: isNew ? Date.now() : (APP_STATE.patients[patientId].created || Date.now()),
         lastUpdated: Date.now()
       };
 
@@ -1182,6 +1212,7 @@
     function openMedModal() {
       document.getElementById('medModalTitle').innerHTML = '<i class="fa-solid fa-pills text-brand-600"></i> Add Medicine';
       document.getElementById('medEditIndex').value = '-1';
+      document.getElementById('medExistingStartDate').value = '';
       document.getElementById('mName').value = '';
       document.getElementById('mornCheck').checked = false;
       document.getElementById('noonCheck').checked = false;
@@ -1210,6 +1241,7 @@
 
       document.getElementById('medModalTitle').innerHTML = '<i class="fa-solid fa-pen text-brand-600"></i> Edit Medicine Dose';
       document.getElementById('medEditIndex').value = idx;
+      document.getElementById('medExistingStartDate').value = m.startDate || '';
       document.getElementById('mName').value = m.name;
 
       document.getElementById('mornCheck').checked = !!m.morn;
@@ -1229,7 +1261,7 @@
       toggleDoseQtyInput('night');
 
       document.getElementById('mMeal').value = m.meal || 'after';
-      document.getElementById('mTotalQty').value = m.qty;
+      document.getElementById('mTotalQty').value = m.initialQty || m.qty;
       document.getElementById('mInstructions').value = m.instructions || '';
 
       document.getElementById('reviseContainer').classList.remove('hidden');
@@ -1263,9 +1295,11 @@
       e.preventDefault();
       const p = APP_STATE.patients[APP_STATE.currentPatientId];
       const editIdx = parseInt(document.getElementById('medEditIndex').value);
+      const existingStartDate = document.getElementById('medExistingStartDate').value;
 
       const isRevisedChecked = document.getElementById('isDoctorRevised').checked;
       const revisionReason = document.getElementById('mChangeReason').value.trim() || 'Dose revised by physician';
+      const enteredQty = parseFloat(document.getElementById('mTotalQty').value) || 0;
 
       const medData = {
         name: document.getElementById('mName').value.trim(),
@@ -1278,7 +1312,9 @@
         night: document.getElementById('nightCheck').checked,
         nightQty: parseFloat(document.getElementById('nightQty').value) || 0.5,
         meal: document.getElementById('mMeal').value,
-        qty: parseFloat(document.getElementById('mTotalQty').value) || 0,
+        initialQty: enteredQty,
+        qty: enteredQty,
+        startDate: (editIdx > -1 && existingStartDate && !isRevisedChecked) ? parseInt(existingStartDate, 10) : Date.now(),
         instructions: document.getElementById('mInstructions').value.trim(),
         discontinued: false,
         history: []
@@ -1292,10 +1328,16 @@
           medData.history = oldMed.history || [];
           medData.history.unshift({
             date: new Date().toLocaleDateString(),
-            reason: `${revisionReason} (Previous: ${oldMed.name}, Qty: ${oldMed.qty})`
+            reason: `${revisionReason} (Previous: ${oldMed.name}, Qty: ${oldMed.initialQty || oldMed.qty})`
           });
+          // When dose revised, restart countdown with new stock from today
+          medData.startDate = Date.now();
         } else {
           medData.history = oldMed.history || [];
+          // If stock quantity was updated, reset countdown date to today for accurate new tracking
+          if (oldMed.initialQty !== enteredQty) {
+            medData.startDate = Date.now();
+          }
         }
         p.medicines[editIdx] = medData;
         showToast(isRevisedChecked ? 'Medicine marked as Doctor Revised!' : 'Medicine updated!');
@@ -1332,12 +1374,12 @@
       showToast('Medicine moved to stopped history');
 
       if (APP_STATE.config.token && APP_STATE.config.pass) {
-        saveToGitHubCloud();
+        await saveToGitHubCloud();
       }
     }
 
     // ==========================================
-    // 8. PATIENT PASS & QR
+    // 9. PATIENT PASS & QR
     // ==========================================
     function openShareModal(patientId) {
       const p = APP_STATE.patients[patientId];
@@ -1380,7 +1422,7 @@
     }
 
     // ==========================================
-    // 9. DUAL BACKWARD-COMPATIBLE CLOUD SYNC
+    // 10. DUAL BACKWARD-COMPATIBLE CLOUD SYNC
     // ==========================================
     async function manualSync(silent = false) {
       const spinner = document.getElementById('syncSpinner');
@@ -1512,7 +1554,7 @@
     }
 
     // ==========================================
-    // 10. UI & PWA INSTALLATION
+    // 11. UI & PWA INSTALLATION
     // ==========================================
     function navigateTo(hash) { window.location.hash = hash; }
     function navigateHome() { if (!APP_STATE.isPatientView) navigateTo(''); }
