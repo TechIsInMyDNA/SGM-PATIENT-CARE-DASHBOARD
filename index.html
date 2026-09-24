@@ -391,7 +391,7 @@
       },
 
       getNextPatientId() {
-        const existingIds = Object.keys(APP_STATE.patients);
+        const existingIds = Object.keys(APP_STATE.patients || {});
         let maxNum = 0;
         existingIds.forEach(id => {
           const match = id.match(/SGMP-?(\d+)/i) || id.match(/SGM-?(\d+)/i);
@@ -529,26 +529,23 @@
     // ==========================================
     function calculateLiveMedStats(m, patientCreatedDate) {
       const perDay = calculateTotalPerDay(m);
+      const totalInitial = parseFloat(m.initialQty !== undefined ? m.initialQty : (m.qty || 0));
+
       if (perDay <= 0) {
-        return { remainingTabs: m.qty || 0, daysLeft: 999, perDay: 0 };
+        return { remainingTabs: totalInitial, daysLeft: 999, perDay: 0 };
       }
 
-      // Base issue date (fallback to patient creation date or now)
       const startTimestamp = m.startDate || m.lastRefillDate || patientCreatedDate || Date.now();
       const now = Date.now();
 
-      // Number of calendar days elapsed since tablets were provided
       const elapsedDays = Math.max(0, Math.floor((now - startTimestamp) / (1000 * 60 * 60 * 24)));
-
-      // Daily consumed tabs
       const consumedTabs = elapsedDays * perDay;
-      const initialQty = parseFloat(m.initialQty || m.qty || 0);
 
-      const remainingTabs = Math.max(0, initialQty - consumedTabs);
+      const remainingTabs = Math.max(0, totalInitial - consumedTabs);
       const daysLeft = Math.max(0, Math.floor(remainingTabs / perDay));
 
       return {
-        remainingTabs: remainingTabs % 1 === 0 ? remainingTabs : remainingTabs.toFixed(1),
+        remainingTabs: remainingTabs % 1 === 0 ? remainingTabs : Number(remainingTabs.toFixed(1)),
         daysLeft: daysLeft,
         perDay: perDay,
         elapsedDays: elapsedDays
@@ -559,7 +556,7 @@
     // 5. EXCEL EXPORT & BACKUP / RESTORE
     // ==========================================
     function exportToExcel() {
-      const patients = Object.values(APP_STATE.patients);
+      const patients = Object.values(APP_STATE.patients || {});
       if (patients.length === 0) {
         return alert("Export karne ke liye koi patient record uplabdh nahi hai!");
       }
@@ -599,7 +596,7 @@
               `"${m.eve ? m.eveQty || 1 : 0}"`,
               `"${m.night ? m.nightQty || 0.5 : 0}"`,
               `"${mealText}"`,
-              `"${m.initialQty || m.qty}"`,
+              `"${m.initialQty !== undefined ? m.initialQty : m.qty}"`,
               `"${stats.remainingTabs}"`,
               `"${stats.perDay}"`,
               `"${stats.daysLeft}"`,
@@ -676,30 +673,35 @@
     }
 
     // ==========================================
-    // 6. ROUTER & CONTROLLER
+    // 6. ROUTER & CONTROLLER (CRASH PROTECTED)
     // ==========================================
     async function router() {
-      const hash = window.location.hash || '';
+      try {
+        const hash = window.location.hash || '';
 
-      if (hash.startsWith('#/view')) {
-        APP_STATE.isPatientView = true;
-        document.getElementById('headerEnvTag').innerText = 'Patient Pass';
-        document.getElementById('topExportBtn').style.display = 'none';
-        document.getElementById('topSyncBtn').style.display = 'none';
-        document.getElementById('topSettingsBtn').style.display = 'none';
+        if (hash.startsWith('#/view')) {
+          APP_STATE.isPatientView = true;
+          document.getElementById('headerEnvTag').innerText = 'Patient Pass';
+          document.getElementById('topExportBtn').style.display = 'none';
+          document.getElementById('topSyncBtn').style.display = 'none';
+          document.getElementById('topSettingsBtn').style.display = 'none';
 
-        const params = new URLSearchParams(hash.split('?')[1]);
-        const patientId = params.get('id');
-        const patientKey = params.get('k');
-        const repoParam = params.get('repo');
+          const params = new URLSearchParams(hash.split('?')[1]);
+          const patientId = params.get('id');
+          const patientKey = params.get('k');
+          const repoParam = params.get('repo');
 
-        await renderPatientDirectView(patientId, patientKey, repoParam);
-      } else if (hash.startsWith('#/patient/')) {
-        APP_STATE.isPatientView = false;
-        const patientId = hash.replace('#/patient/', '');
-        renderAdminPatientView(patientId);
-      } else {
-        APP_STATE.isPatientView = false;
+          await renderPatientDirectView(patientId, patientKey, repoParam);
+        } else if (hash.startsWith('#/patient/')) {
+          APP_STATE.isPatientView = false;
+          const patientId = hash.replace('#/patient/', '');
+          renderAdminPatientView(patientId);
+        } else {
+          APP_STATE.isPatientView = false;
+          renderAdminDashboard();
+        }
+      } catch (routerErr) {
+        console.error("Router error:", routerErr);
         renderAdminDashboard();
       }
     }
@@ -715,11 +717,13 @@
     });
 
     // ==========================================
-    // 7. VIEW RENDERING (DAILY STOCK TRACKER WITH CALENDAR DEDUCTION)
+    // 7. VIEW RENDERING (SAFE & TESTED)
     // ==========================================
     function renderAdminDashboard() {
       const root = document.getElementById('viewRoot');
-      const patients = Object.values(APP_STATE.patients);
+      if (!root) return;
+
+      const patients = Object.values(APP_STATE.patients || {});
 
       const allActiveMedications = [];
       patients.forEach(p => {
@@ -739,7 +743,6 @@
         });
       });
 
-      // Sort with least days remaining at the top
       allActiveMedications.sort((a, b) => a.daysLeft - b.daysLeft);
 
       let dailyStockHtml = '';
@@ -826,7 +829,7 @@
     }
 
     function renderPatientCardList(patients) {
-      if (patients.length === 0) {
+      if (!patients || patients.length === 0) {
         return `
           <div class="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-400">
             <i class="fa-solid fa-folder-open text-3xl mb-2 text-slate-300"></i>
@@ -1025,7 +1028,7 @@
     }
 
     function renderMedicationList(meds, isReadOnly = false, patientCreatedDate = null) {
-      const activeMeds = meds.filter(m => !m.discontinued);
+      const activeMeds = (meds || []).filter(m => !m.discontinued);
       if (activeMeds.length === 0) {
         return `<div class="bg-white border rounded-2xl p-6 text-center text-xs text-slate-400">No active medicines logged.</div>`;
       }
@@ -1091,7 +1094,7 @@
     }
 
     function renderRevisedHistorySection(meds) {
-      const revisedMeds = meds.filter(m => m.discontinued || (m.history && m.history.length > 0));
+      const revisedMeds = (meds || []).filter(m => m.discontinued || (m.history && m.history.length > 0));
       if (revisedMeds.length === 0) return '';
 
       return `
@@ -1261,7 +1264,7 @@
       toggleDoseQtyInput('night');
 
       document.getElementById('mMeal').value = m.meal || 'after';
-      document.getElementById('mTotalQty').value = m.initialQty || m.qty;
+      document.getElementById('mTotalQty').value = m.initialQty !== undefined ? m.initialQty : m.qty;
       document.getElementById('mInstructions').value = m.instructions || '';
 
       document.getElementById('reviseContainer').classList.remove('hidden');
@@ -1330,11 +1333,9 @@
             date: new Date().toLocaleDateString(),
             reason: `${revisionReason} (Previous: ${oldMed.name}, Qty: ${oldMed.initialQty || oldMed.qty})`
           });
-          // When dose revised, restart countdown with new stock from today
           medData.startDate = Date.now();
         } else {
           medData.history = oldMed.history || [];
-          // If stock quantity was updated, reset countdown date to today for accurate new tracking
           if (oldMed.initialQty !== enteredQty) {
             medData.startDate = Date.now();
           }
@@ -1580,7 +1581,7 @@
 
     function filterPatients(query) {
       const q = query.toLowerCase();
-      const filtered = Object.values(APP_STATE.patients).filter(p => 
+      const filtered = Object.values(APP_STATE.patients || {}).filter(p => 
         p.name.toLowerCase().includes(q) ||
         p.phone.includes(q) ||
         p.id.toLowerCase().includes(q) ||
