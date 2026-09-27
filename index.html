@@ -4,200 +4,241 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>SGM Patient Care & Rx Timeline</title>
-  <meta name="theme-color" content="#0d9488">
+  <meta name="theme-color" content="#0f766e">
+  <!-- Tailwind CDN with fallback safety -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- QR Code Library -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
   <style>
-    * { -webkit-tap-highlight-color: transparent; }
-    .no-scrollbar::-webkit-scrollbar { display: none; }
-    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-    .sheet-up { animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    /* Windows 7 Chrome Fallback & Polish */
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f8fafc;
+      -webkit-font-smoothing: antialiased;
+    }
+    .custom-scroll::-webkit-scrollbar { width: 4px; height: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .custom-scroll::-webkit-scrollbar-track { background: transparent; }
+    .sheet-up {
+      -webkit-animation: slideUp 0.22s ease-out forwards;
+      animation: slideUp 0.22s ease-out forwards;
+    }
+    @-webkit-keyframes slideUp { from { -webkit-transform: translateY(40px); opacity: 0; } to { -webkit-transform: translateY(0); opacity: 1; } }
+    @keyframes slideUp { from { transform: translateY(40px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+    .badge-glow {
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+    }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col font-sans pb-24">
+<body class="text-slate-900 min-h-screen flex flex-col pb-24 selection:bg-teal-500 selection:text-white">
 
   <!-- TOP HEADER -->
-  <header class="bg-[#0f766e] text-white sticky top-0 z-40 shadow-md">
-    <div class="max-w-2xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center space-x-2.5 cursor-pointer" onclick="navigateHome()">
-        <div class="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center text-lg shadow-inner">
+  <header class="bg-gradient-to-r from-teal-800 via-teal-700 to-emerald-800 text-white sticky top-0 z-40 shadow-lg border-b border-teal-600/30">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer group" onclick="navigateHome()">
+        <div class="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center text-xl shadow-inner group-hover:scale-105 transition-transform">
           💊
         </div>
         <div>
-          <h1 class="font-bold text-base tracking-wide flex items-center gap-1.5 leading-tight">
-            SGM Rx TIMELINE
-            <span class="text-[10px] bg-white/25 px-1.5 py-0.5 rounded font-medium" id="headerEnvTag">Admin</span>
-          </h1>
-          <p class="text-[11px] text-teal-100 font-medium">Shree Ganesh Medicals</p>
+          <div class="flex items-center gap-2">
+            <h1 class="font-black text-base tracking-wide leading-none">SGM Rx TIMELINE</h1>
+            <span class="text-[9px] font-black uppercase tracking-wider bg-teal-900/80 border border-teal-400/30 text-teal-200 px-1.5 py-0.5 rounded shadow-xs" id="headerEnvTag">Admin</span>
+          </div>
+          <p class="text-[11px] text-teal-100/90 font-medium tracking-tight mt-0.5">Shree Ganesh Medicals • Patient Care Desk</p>
         </div>
       </div>
-      <div class="flex items-center space-x-2">
-        <button id="topExportBtn" onclick="exportToExcel()" class="h-8 px-2.5 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center text-xs font-bold gap-1" title="Export to Excel">
-          📊 <span class="hidden sm:inline">Excel</span>
+      
+      <div class="flex items-center space-x-1.5">
+        <button id="topExportBtn" onclick="exportToExcel()" class="h-8 px-2.5 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 border border-white/15 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs" title="Export to Excel">
+          <span>📊</span> <span class="hidden sm:inline">Excel</span>
         </button>
-        <button id="topSyncBtn" onclick="manualSync()" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center text-sm" title="Sync Cloud Data">
+        <button id="topSyncBtn" onclick="manualSync()" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 border border-white/15 text-xs font-bold flex items-center justify-center transition-all shadow-xs" title="Sync Cloud Data">
           🔄
         </button>
-        <button id="topSettingsBtn" onclick="openModal('settingsModal')" class="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 active:scale-95 flex items-center justify-center text-sm" title="Settings">
+        <button id="topSettingsBtn" onclick="openModal('settingsModal')" class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 active:scale-95 border border-white/15 text-xs font-bold flex items-center justify-center transition-all shadow-xs" title="Settings & Cloud Setup">
           ⚙️
         </button>
       </div>
     </div>
   </header>
 
+  <!-- PWA INSTALL BANNER -->
+  <div id="pwaBanner" class="hidden bg-gradient-to-r from-emerald-600 to-teal-700 text-white px-4 py-2.5 text-xs flex items-center justify-between shadow-md max-w-3xl mx-auto w-full">
+    <div class="flex items-center space-x-2">
+      <span class="text-base">📲</span>
+      <span class="font-medium">Install SGM App on PC/Mobile for 1-click desktop launch</span>
+    </div>
+    <button onclick="installPWA()" class="bg-white text-teal-800 px-3 py-1 rounded-lg font-bold shadow-xs active:scale-95 hover:bg-teal-50">INSTALL</button>
+  </div>
+
   <!-- TOAST ALERTS -->
   <div id="toastContainer" class="fixed top-16 right-4 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
   <!-- MAIN VIEWPORT CONTAINER -->
-  <main class="max-w-2xl mx-auto w-full px-4 pt-4 flex-1">
+  <main class="max-w-3xl mx-auto w-full px-4 pt-4 flex-1">
     <div id="viewRoot">
-      <div class="p-8 text-center text-slate-500 text-xs">
-        <p>Loading SGM Dashboard...</p>
+      <div class="p-12 text-center text-slate-400 text-xs flex flex-col items-center gap-2">
+        <span class="text-2xl animate-spin">🔄</span>
+        <p class="font-medium">Loading SGM Dashboard...</p>
       </div>
     </div>
   </main>
 
   <!-- SETTINGS & BACKUP/RESTORE MODAL -->
-  <div id="settingsModal" class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
-    <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 sheet-up max-h-[90vh] overflow-y-auto shadow-2xl">
-      <div class="flex justify-between items-center pb-4 border-b border-slate-100">
-        <h2 class="text-base font-bold text-slate-800">⚙️ Cloud Config & Backups</h2>
-        <button onclick="closeModal('settingsModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+  <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 z-50 backdrop-blur-xs hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-5 sheet-up max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">⚙️</span>
+          <h2 class="text-sm font-bold text-slate-800 uppercase tracking-wide">Cloud Config & Security</h2>
+        </div>
+        <button onclick="closeModal('settingsModal')" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold flex items-center justify-center text-xs">✕</button>
       </div>
 
-      <div class="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-        <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider">💾 Offline Backup & Restore</h3>
-        <div class="flex gap-2">
-          <button onclick="downloadJsonBackup()" class="flex-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 py-2 px-3 rounded-lg text-xs font-bold">
-            📥 Download Backup
+      <div class="mt-3.5 p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <span>💾</span> Offline Backup & Recovery
+          </h3>
+          <span class="text-[10px] text-slate-400">Windows/Mobile</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="downloadJsonBackup()" class="bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs">
+            <span>📥</span> Download Backup
           </button>
-          <label class="flex-1 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center cursor-pointer">
-            📤 Restore File
+          <label class="bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 py-2 px-3 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer">
+            <span>📤</span> Restore Backup
             <input type="file" id="restoreFileInput" accept=".json" onchange="restoreJsonBackup(event)" class="hidden">
           </label>
         </div>
       </div>
 
-      <div class="mt-4 space-y-3.5 text-xs">
+      <div class="mt-4 space-y-3 text-xs">
         <div>
-          <label class="block font-semibold text-slate-600 mb-1">GitHub Personal Access Token (PAT):</label>
-          <input type="password" id="cfgToken" placeholder="ghp_xxxxxxxxxxxx" class="w-full px-3 py-2 border rounded-lg font-mono">
+          <label class="block font-bold text-slate-700 mb-1">GitHub Personal Access Token (PAT):</label>
+          <input type="password" id="cfgToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" class="w-full px-3 py-2 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
         </div>
         <div>
-          <label class="block font-semibold text-slate-600 mb-1">GitHub Repo Name (owner/repo):</label>
-          <input type="text" id="cfgRepo" placeholder="TechIsInMyDNA/SGM-PATIENT-CARE-DASHBOARD" class="w-full px-3 py-2 border rounded-lg font-mono">
+          <label class="block font-bold text-slate-700 mb-1">GitHub Repository (owner/repo):</label>
+          <input type="text" id="cfgRepo" placeholder="TechIsInMyDNA/SGM-PATIENT-CARE-DASHBOARD" class="w-full px-3 py-2 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
         </div>
         <div>
-          <label class="block font-semibold text-slate-600 mb-1">File Path in Repo:</label>
-          <input type="text" id="cfgPath" value="data.json" class="w-full px-3 py-2 border rounded-lg font-mono">
+          <label class="block font-bold text-slate-700 mb-1">Database File Path:</label>
+          <input type="text" id="cfgPath" value="data.json" class="w-full px-3 py-2 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
         </div>
-        <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
-          <label class="block font-bold text-amber-900">🔒 Master AES-GCM Passphrase:</label>
-          <input type="password" id="cfgPass" placeholder="Master Key to encrypt & decrypt index" class="w-full px-3 py-2 border border-amber-300 rounded-lg font-mono bg-white">
+        <div class="p-3 bg-amber-50/80 border border-amber-200 rounded-xl space-y-1">
+          <label class="block font-black text-amber-900 flex items-center gap-1.5">
+            <span>🔒</span> Master AES-GCM Passphrase:
+          </label>
+          <input type="password" id="cfgPass" placeholder="Master Key to encrypt & decrypt index" class="w-full px-3 py-2 border border-amber-300 rounded-lg font-mono text-xs bg-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden">
+          <p class="text-[10px] text-amber-800 mt-0.5">Encrypted strictly on-device before syncing to GitHub.</p>
         </div>
       </div>
 
       <div class="mt-5 flex gap-2">
-        <button onclick="saveAndSyncSettings()" class="flex-1 bg-[#0f766e] text-white font-bold py-2.5 rounded-xl text-xs">Save & Live Sync</button>
-        <button onclick="closeModal('settingsModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 text-xs">Close</button>
+        <button onclick="saveAndSyncSettings()" class="flex-1 bg-teal-700 hover:bg-teal-800 text-white font-bold py-2.5 rounded-xl text-xs shadow-md active:scale-95 transition-all">Save & Live Sync</button>
+        <button onclick="closeModal('settingsModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 text-xs hover:bg-slate-50">Close</button>
       </div>
     </div>
   </div>
 
   <!-- PATIENT CREATE/EDIT MODAL -->
-  <div id="patientModal" class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
-    <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 sheet-up max-h-[92vh] overflow-y-auto shadow-2xl">
-      <div class="flex justify-between items-center pb-4 border-b border-slate-100">
-        <h2 id="patientModalTitle" class="text-base font-bold text-slate-800">👤 New Patient Profile</h2>
-        <button onclick="closeModal('patientModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+  <div id="patientModal" class="fixed inset-0 bg-slate-900/60 z-50 backdrop-blur-xs hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-5 sheet-up max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <h2 id="patientModalTitle" class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+          <span>👤</span> New Patient Profile
+        </h2>
+        <button onclick="closeModal('patientModal')" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold flex items-center justify-center text-xs">✕</button>
       </div>
 
-      <form onsubmit="handlePatientFormSubmit(event)" class="mt-4 space-y-3 text-xs">
+      <form onsubmit="handlePatientFormSubmit(event)" class="mt-4 space-y-3.5 text-xs">
         <input type="hidden" id="pFormId">
         <div>
-          <label class="block font-semibold text-slate-600 mb-1">Patient Name *</label>
-          <input type="text" id="pFormName" required placeholder="e.g. Ramesh Agrawal" class="w-full px-3 py-2 border rounded-lg text-sm">
+          <label class="block font-bold text-slate-700 mb-1">Patient Full Name *</label>
+          <input type="text" id="pFormName" required placeholder="e.g. Ramesh Agrawal" class="w-full px-3 py-2 border rounded-lg text-sm font-semibold focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
         </div>
         <div class="grid grid-cols-2 gap-2.5">
           <div>
-            <label class="block font-semibold text-slate-600 mb-1">Phone Number *</label>
-            <input type="tel" id="pFormPhone" required pattern="[0-9]{10}" placeholder="98XXXXXXXX" class="w-full px-3 py-2 border rounded-lg text-sm">
+            <label class="block font-bold text-slate-700 mb-1">Phone Number (10 digits) *</label>
+            <input type="tel" id="pFormPhone" required pattern="[0-9]{10}" placeholder="98XXXXXXXX" class="w-full px-3 py-2 border rounded-lg text-sm font-semibold focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
           </div>
           <div>
-            <label class="block font-semibold text-slate-600 mb-1">Consulting Doctor</label>
-            <input type="text" id="pFormDoctor" placeholder="e.g. Dr. Verma" class="w-full px-3 py-2 border rounded-lg text-sm">
+            <label class="block font-bold text-slate-700 mb-1">Consulting Doctor</label>
+            <input type="text" id="pFormDoctor" placeholder="e.g. Dr. Verma" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
           </div>
         </div>
         <div>
-          <label class="block font-semibold text-slate-600 mb-1">Medical Diagnosis</label>
-          <input type="text" id="pFormDiag" placeholder="e.g. Diabetes, BP" class="w-full px-3 py-2 border rounded-lg text-sm">
+          <label class="block font-bold text-slate-700 mb-1">Medical Conditions / Diagnosis</label>
+          <input type="text" id="pFormDiag" placeholder="e.g. Hypertension, Type 2 Diabetes" class="w-full px-3 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
         </div>
         <div>
-          <label class="block font-semibold text-slate-600 mb-1">Allergies / Critical Alerts</label>
-          <input type="text" id="pFormAllergies" placeholder="e.g. Sulfa drugs" class="w-full px-3 py-2 border rounded-lg text-sm bg-red-50/50">
+          <label class="block font-bold text-rose-800 mb-1">Allergies / Critical Alerts</label>
+          <input type="text" id="pFormAllergies" placeholder="e.g. Sulfa drugs, Penicillin allergy" class="w-full px-3 py-2 border border-rose-200 rounded-lg text-sm bg-rose-50/50 focus:ring-2 focus:ring-rose-400 focus:outline-hidden">
         </div>
         <div class="pt-2 flex gap-2">
-          <button type="submit" class="flex-1 bg-[#0f766e] text-white font-bold py-2.5 rounded-xl text-xs">Save Patient Record</button>
-          <button type="button" onclick="closeModal('patientModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 text-xs">Cancel</button>
+          <button type="submit" class="flex-1 bg-teal-700 hover:bg-teal-800 text-white font-bold py-2.5 rounded-xl text-xs shadow-md active:scale-95 transition-all">Save Patient Profile</button>
+          <button type="button" onclick="closeModal('patientModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 text-xs hover:bg-slate-50">Cancel</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- MEDICINE CREATE/EDIT MODAL -->
-  <div id="medModal" class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm hidden items-end sm:items-center justify-center p-0 sm:p-4">
-    <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-6 sheet-up max-h-[92vh] overflow-y-auto shadow-2xl">
-      <div class="flex justify-between items-center pb-4 border-b border-slate-100">
-        <h2 id="medModalTitle" class="text-base font-bold text-slate-800">💊 Add Medicine</h2>
-        <button onclick="closeModal('medModal')" class="text-slate-400 hover:text-slate-600 text-lg font-bold">✕</button>
+  <div id="medModal" class="fixed inset-0 bg-slate-900/60 z-50 backdrop-blur-xs hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-5 sheet-up max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <h2 id="medModalTitle" class="text-sm font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
+          <span>💊</span> Add Medicine
+        </h2>
+        <button onclick="closeModal('medModal')" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold flex items-center justify-center text-xs">✕</button>
       </div>
 
       <form onsubmit="handleMedicineFormSubmit(event)" class="mt-4 space-y-3.5 text-xs">
         <input type="hidden" id="medEditIndex" value="-1">
 
         <div>
-          <label class="block font-semibold text-slate-600 mb-1">Medicine Name & Strength *</label>
-          <input type="text" id="mName" required placeholder="e.g. Telmisartan 40mg" class="w-full px-3 py-2 border rounded-lg text-sm font-semibold">
+          <label class="block font-bold text-slate-700 mb-1">Medicine Name & Strength *</label>
+          <input type="text" id="mName" required placeholder="e.g. Telmisartan 40mg / Glycomet GP 1" class="w-full px-3 py-2 border rounded-lg text-sm font-bold text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-600 mb-1">Dose Schedule (Tablets Per Time):</label>
+          <label class="block font-bold text-slate-700 mb-1.5">Dose Schedule & Tablet Quantity Per Time:</label>
           <div class="grid grid-cols-2 gap-2 text-xs">
-            <div class="p-2 border rounded-xl bg-amber-50/70 border-amber-200">
-              <label class="flex items-center gap-1.5 font-bold text-amber-900 cursor-pointer">
-                <input type="checkbox" id="mornCheck" onchange="toggleDoseQty('morn')">
-                <span>🌅 Subah</span>
+            <div class="p-2.5 border rounded-xl bg-amber-50/70 border-amber-200">
+              <label class="flex items-center gap-2 font-bold text-amber-900 cursor-pointer">
+                <input type="checkbox" id="mornCheck" onchange="toggleDoseQty('morn')" class="rounded text-amber-600">
+                <span>🌅 Subah (Morning)</span>
               </label>
               <div id="mornQtyWrap" class="hidden mt-1.5">
                 <input type="number" id="mornQty" step="0.25" min="0.25" value="1" class="w-full bg-white border border-amber-300 rounded px-2 py-1 text-xs font-bold text-amber-900">
               </div>
             </div>
 
-            <div class="p-2 border rounded-xl bg-blue-50/70 border-blue-200">
-              <label class="flex items-center gap-1.5 font-bold text-blue-900 cursor-pointer">
-                <input type="checkbox" id="noonCheck" onchange="toggleDoseQty('noon')">
-                <span>☀️ Dupahar</span>
+            <div class="p-2.5 border rounded-xl bg-blue-50/70 border-blue-200">
+              <label class="flex items-center gap-2 font-bold text-blue-900 cursor-pointer">
+                <input type="checkbox" id="noonCheck" onchange="toggleDoseQty('noon')" class="rounded text-blue-600">
+                <span>☀️ Dupahar (Afternoon)</span>
               </label>
               <div id="noonQtyWrap" class="hidden mt-1.5">
                 <input type="number" id="noonQty" step="0.25" min="0.25" value="1" class="w-full bg-white border border-blue-300 rounded px-2 py-1 text-xs font-bold text-blue-900">
               </div>
             </div>
 
-            <div class="p-2 border rounded-xl bg-orange-50/70 border-orange-200">
-              <label class="flex items-center gap-1.5 font-bold text-orange-900 cursor-pointer">
-                <input type="checkbox" id="eveCheck" onchange="toggleDoseQty('eve')">
-                <span>🌇 Shaam</span>
+            <div class="p-2.5 border rounded-xl bg-orange-50/70 border-orange-200">
+              <label class="flex items-center gap-2 font-bold text-orange-900 cursor-pointer">
+                <input type="checkbox" id="eveCheck" onchange="toggleDoseQty('eve')" class="rounded text-orange-600">
+                <span>🌇 Shaam (Evening)</span>
               </label>
               <div id="eveQtyWrap" class="hidden mt-1.5">
                 <input type="number" id="eveQty" step="0.25" min="0.25" value="1" class="w-full bg-white border border-orange-300 rounded px-2 py-1 text-xs font-bold text-orange-900">
               </div>
             </div>
 
-            <div class="p-2 border rounded-xl bg-indigo-50/70 border-indigo-200">
-              <label class="flex items-center gap-1.5 font-bold text-indigo-900 cursor-pointer">
-                <input type="checkbox" id="nightCheck" onchange="toggleDoseQty('night')">
-                <span>🌙 Raat</span>
+            <div class="p-2.5 border rounded-xl bg-indigo-50/70 border-indigo-200">
+              <label class="flex items-center gap-2 font-bold text-indigo-900 cursor-pointer">
+                <input type="checkbox" id="nightCheck" onchange="toggleDoseQty('night')" class="rounded text-indigo-600">
+                <span>🌙 Raat (Night)</span>
               </label>
               <div id="nightQtyWrap" class="hidden mt-1.5">
                 <input type="number" id="nightQty" step="0.25" min="0.25" value="0.5" class="w-full bg-white border border-indigo-300 rounded px-2 py-1 text-xs font-bold text-indigo-900">
@@ -206,73 +247,80 @@
           </div>
         </div>
 
-        <!-- NEW VISIBLE START DATE SELECTOR -->
+        <!-- VISIBLE CALENDAR START DATE & QUANTITY -->
         <div class="grid grid-cols-2 gap-2.5">
           <div>
-            <label class="block font-semibold text-slate-600 mb-1">📅 Medicine Start / Issue Date *</label>
-            <input type="date" id="mStartDate" required class="w-full px-3 py-2 border rounded-lg bg-white text-xs font-medium">
+            <label class="block font-bold text-slate-700 mb-1">📅 Medicine Issue / Start Date *</label>
+            <input type="date" id="mStartDate" required class="w-full px-3 py-2 border rounded-lg bg-white text-xs font-semibold focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
           </div>
           <div>
-            <label class="block font-semibold text-slate-600 mb-1">Total Stock (Tablets) *</label>
-            <input type="number" id="mTotalQty" required min="1" step="1" placeholder="e.g. 30" class="w-full px-3 py-2 border rounded-lg text-xs font-bold">
+            <label class="block font-bold text-slate-700 mb-1">Total Stock (Tablets) *</label>
+            <input type="number" id="mTotalQty" required min="1" step="1" placeholder="e.g. 30" class="w-full px-3 py-2 border rounded-lg text-xs font-bold focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
           </div>
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-600 mb-1">Meal Relation</label>
-          <select id="mMeal" class="w-full px-3 py-2 border rounded-lg bg-white text-xs">
+          <label class="block font-bold text-slate-700 mb-1">Meal Relation</label>
+          <select id="mMeal" class="w-full px-3 py-2 border rounded-lg bg-white text-xs font-medium focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
             <option value="after">🍽️ Khaane Ke Baad</option>
-            <option value="before">🥣 Khaane Se Pehle</option>
-            <option value="with">🥗 Khaate Waqt</option>
+            <option value="before">🥣 Khaane Se Pehle (Empty Stomach)</option>
+            <option value="with">🥗 Khaate Waqt (With Meal)</option>
           </select>
         </div>
 
         <div>
-          <label class="block font-semibold text-slate-600 mb-1">Doctor's Remark / Instruction</label>
-          <input type="text" id="mInstructions" placeholder="e.g. BP high hone par" class="w-full px-3 py-2 border rounded-lg text-xs">
+          <label class="block font-bold text-slate-700 mb-1">Doctor's Remark / Instruction</label>
+          <input type="text" id="mInstructions" placeholder="e.g. BP high hone par / Paani khoob piyein" class="w-full px-3 py-2 border rounded-lg text-xs focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
         </div>
 
+        <!-- DOCTOR REVISION TOGGLE -->
         <div id="reviseContainer" class="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-1.5">
           <label class="flex items-center space-x-2 cursor-pointer">
-            <input type="checkbox" id="isDoctorRevised" onchange="toggleRevNote(this.checked)" class="w-4 h-4 rounded text-rose-600">
+            <input type="checkbox" id="isDoctorRevised" onchange="toggleRevNote(this.checked)" class="w-4 h-4 rounded text-rose-600 focus:ring-rose-500">
             <span class="text-xs font-bold text-rose-900">📝 Mark as Doctor Revised / Changed Dose</span>
           </label>
+          <p class="text-[10px] text-rose-700">Tick only if doctor altered the dose timing or power. Normal typo edits do not need this.</p>
           <div id="reviseReasonWrap" class="hidden pt-1">
-            <input type="text" id="mChangeReason" placeholder="Reason (e.g. Doctor reduced dose)" class="w-full px-3 py-1.5 border border-rose-300 rounded-lg text-xs bg-white">
+            <input type="text" id="mChangeReason" placeholder="Reason (e.g. Doctor reduced dose after normal BP)" class="w-full px-3 py-1.5 border border-rose-300 rounded-lg text-xs bg-white">
           </div>
         </div>
 
         <div class="pt-2 flex gap-2">
-          <button type="submit" class="flex-1 bg-[#0f766e] text-white font-bold py-2.5 rounded-xl text-xs">Save Medicine</button>
-          <button type="button" onclick="closeModal('medModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 text-xs">Cancel</button>
+          <button type="submit" class="flex-1 bg-teal-700 hover:bg-teal-800 text-white font-bold py-2.5 rounded-xl text-xs shadow-md active:scale-95 transition-all">Save Medicine</button>
+          <button type="button" onclick="closeModal('medModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 text-xs hover:bg-slate-50">Cancel</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- PATIENT PASS / QR MODAL -->
-  <div id="shareModal" class="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm hidden items-center justify-center p-4">
-    <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center shadow-2xl">
-      <h3 class="text-base font-bold text-slate-800 mb-1">📲 Patient Digital Pass</h3>
-      <p class="text-xs text-slate-500 mb-4">Patient ke phone se scan karein ya direct WhatsApp karein.</p>
-      <div class="bg-white p-3 rounded-xl border border-slate-200 inline-block shadow-sm">
+  <div id="shareModal" class="fixed inset-0 bg-slate-900/60 z-50 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white w-full max-w-sm rounded-2xl p-6 text-center shadow-2xl border border-slate-200">
+      <div class="w-12 h-12 bg-teal-50 border border-teal-200 rounded-2xl flex items-center justify-center mx-auto mb-2 text-xl shadow-xs">
+        📲
+      </div>
+      <h3 class="text-base font-black text-slate-900 mb-0.5">Patient Digital Pass</h3>
+      <p class="text-xs text-slate-500 mb-4">Patient ke phone se scan karwayein ya 1-click WhatsApp karein.</p>
+      
+      <div class="bg-white p-3.5 rounded-2xl border-2 border-slate-100 inline-block shadow-md">
         <div id="qrcodeCanvas"></div>
       </div>
-      <div class="mt-4 flex flex-col gap-2">
-        <button id="modalWaBtn" class="w-full bg-[#25D366] hover:bg-[#20ba5a] text-white py-2.5 rounded-xl font-bold text-xs shadow-sm">
-          💬 Send on WhatsApp
+
+      <div class="mt-5 flex flex-col gap-2">
+        <button id="modalWaBtn" class="w-full bg-[#25D366] hover:bg-[#20ba5a] text-white py-2.5 rounded-xl font-bold text-xs shadow-sm flex items-center justify-center gap-2 active:scale-95 transition-all">
+          <span>💬</span> Send Pass on WhatsApp
         </button>
-        <button onclick="copyShareUrl()" class="w-full border border-slate-300 py-2 rounded-xl font-medium text-xs text-slate-700">
-          📋 Copy Link
+        <button onclick="copyShareUrl()" class="w-full border border-slate-300 py-2 rounded-xl font-semibold text-xs text-slate-700 hover:bg-slate-50 flex items-center justify-center gap-1.5">
+          <span>📋</span> Copy Patient View Link
         </button>
-        <button onclick="closeModal('shareModal')" class="text-xs text-slate-400 font-semibold py-1">Close</button>
+        <button onclick="closeModal('shareModal')" class="text-xs text-slate-400 font-bold py-1 hover:text-slate-600">Close</button>
       </div>
     </div>
   </div>
 
   <script>
     // ==========================================
-    // 1. CONFIG & SAFE STATE
+    // 1. CONFIG & SAFE PERSISTENCE
     // ==========================================
     const DEFAULT_CONFIG = {
       token: '',
@@ -291,11 +339,13 @@
       patientKeys: safeJsonParse(localStorage.getItem('sgm_p_keys'), {}),
       currentPatientId: null,
       isPatientView: false,
-      fileSha: localStorage.getItem('sgm_file_sha') || null
+      fileSha: localStorage.getItem('sgm_file_sha') || null,
+      deferredPrompt: null
     };
 
     // ==========================================
     // 2. CRYPTO ENGINE (AES-GCM 256-BIT)
+    // Cross-compatible with Windows 7 Chrome
     // ==========================================
     const CryptoEngine = {
       async deriveKey(passphrase, salt) {
@@ -320,9 +370,9 @@
         const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded);
 
         return {
-          salt: btoa(String.fromCharCode.apply(null, salt)),
-          iv: btoa(String.fromCharCode.apply(null, iv)),
-          data: btoa(String.fromCharCode.apply(null, new Uint8Array(cipher)))
+          salt: btoa(String.fromCharCode.apply(null, Array.from(salt))),
+          iv: btoa(String.fromCharCode.apply(null, Array.from(iv))),
+          data: btoa(String.fromCharCode.apply(null, Array.from(new Uint8Array(cipher))))
         };
       },
 
@@ -365,7 +415,7 @@
     };
 
     // ==========================================
-    // 3. GITHUB API LIVE SYNC
+    // 3. GITHUB API LIVE SYNC (AUTO SHA MANAGEMENT)
     // ==========================================
     const GitHubSync = {
       async pullRemoteData(targetRepo) {
@@ -373,7 +423,7 @@
         const path = APP_STATE.config.path || 'data.json';
         const token = APP_STATE.config.token;
 
-        if (!repo) throw new Error("Repo name missing");
+        if (!repo) throw new Error("Repo name missing in settings");
 
         if (token) {
           const url = `https://api.github.com/repos/${repo}/contents/${path}`;
@@ -383,7 +433,7 @@
           });
 
           if (res.status === 404) return { sha: null, data: { version: 1, records: {} } };
-          if (!res.ok) throw new Error(`GitHub error: ${res.statusText}`);
+          if (!res.ok) throw new Error(`GitHub: ${res.statusText}`);
 
           const json = await res.json();
           APP_STATE.fileSha = json.sha;
@@ -405,7 +455,7 @@
 
       async pushRemoteData(dataPayload) {
         const { repo, path, token } = APP_STATE.config;
-        if (!token || !repo) throw new Error("Token/Repo missing");
+        if (!token || !repo) throw new Error("Token/Repo missing in settings");
 
         const url = `https://api.github.com/repos/${repo}/contents/${path}`;
         
@@ -445,7 +495,7 @@
     };
 
     // ==========================================
-    // 4. DAILY COUNTDOWN STATS CALCULATOR
+    // 4. DAILY LIVE COUNTDOWN CALCULATOR
     // ==========================================
     function calculateLiveMedStats(m, patientCreatedDate) {
       let perDay = 0;
@@ -457,7 +507,6 @@
 
       const totalInitial = parseFloat(m.initialQty !== undefined ? m.initialQty : (m.qty || 0));
 
-      // Parse start date accurately (from YYYY-MM-DD or timestamp)
       let startTimestamp = Date.now();
       if (m.startDate) {
         startTimestamp = typeof m.startDate === 'string' ? new Date(m.startDate).getTime() : m.startDate;
@@ -481,7 +530,7 @@
     }
 
     // ==========================================
-    // 5. VIEW RENDERING ENGINE
+    // 5. DHASU UI RENDERING ENGINE
     // ==========================================
     function renderAdminDashboard() {
       const root = document.getElementById('viewRoot');
@@ -490,10 +539,16 @@
       const patients = Object.values(APP_STATE.patients || {});
 
       const allActiveMedications = [];
+      let totalDosesCount = 0;
+      let criticalRefillCount = 0;
+
       patients.forEach(p => {
         (p.medicines || []).forEach(m => {
           if (!m.discontinued) {
+            totalDosesCount++;
             const stats = calculateLiveMedStats(m, p.created || p.lastUpdated);
+            if (stats.daysLeft <= 3) criticalRefillCount++;
+
             allActiveMedications.push({
               patientId: p.id,
               patientName: p.name,
@@ -509,39 +564,68 @@
 
       allActiveMedications.sort((a, b) => a.daysLeft - b.daysLeft);
 
+      // KPI Metric Cards
+      const kpiHtml = `
+        <div class="grid grid-cols-3 gap-2.5 mb-4">
+          <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Patients</span>
+            <div class="text-xl font-black text-slate-800 mt-1">${patients.length}</div>
+          </div>
+          <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
+            <span class="text-[10px] font-bold text-teal-600 uppercase tracking-wider">Active Doses</span>
+            <div class="text-xl font-black text-teal-700 mt-1">${totalDosesCount}</div>
+          </div>
+          <div class="bg-white p-3 rounded-2xl border ${criticalRefillCount > 0 ? 'border-rose-300 bg-rose-50/50 badge-glow' : 'border-slate-200'} shadow-xs flex flex-col justify-between">
+            <span class="text-[10px] font-bold ${criticalRefillCount > 0 ? 'text-rose-600' : 'text-slate-400'} uppercase tracking-wider">Due ≤3 Days</span>
+            <div class="text-xl font-black ${criticalRefillCount > 0 ? 'text-rose-600 animate-pulse' : 'text-slate-800'} mt-1">${criticalRefillCount}</div>
+          </div>
+        </div>
+      `;
+
       let stockTrackerHtml = '';
       if (allActiveMedications.length > 0) {
         stockTrackerHtml = `
           <div class="mb-5 bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-            <div class="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-3">
-              <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide">
-                ⏳ Daily Stock & Refill Tracker (${allActiveMedications.length} Medicines)
-              </h3>
-              <span class="text-[10px] text-slate-400 font-medium">Live Countdown</span>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+              <div class="flex items-center gap-1.5">
+                <span class="text-sm">⏳</span>
+                <h3 class="text-xs font-black text-slate-800 uppercase tracking-wider">
+                  Live Stock & Daily Refill Tracker
+                </h3>
+              </div>
+              <span class="text-[10px] font-bold bg-teal-50 text-teal-800 border border-teal-200 px-2 py-0.5 rounded-full">
+                ${allActiveMedications.length} Medicines
+              </span>
             </div>
-            <div class="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+            
+            <div class="space-y-2.5 max-h-72 overflow-y-auto pr-1 custom-scroll">
               ${allActiveMedications.map(r => {
                 let badgeClass = "bg-emerald-50 border-emerald-200 text-emerald-800";
                 let badgeText = `✅ ${r.daysLeft} din bachi hai`;
                 if (r.daysLeft <= 3) {
-                  badgeClass = "bg-rose-50 border-rose-300 text-rose-800 animate-pulse";
+                  badgeClass = "bg-rose-50 border-rose-300 text-rose-800 font-black animate-pulse";
                   badgeText = `🚨 Sirf ${r.daysLeft} din bache!`;
                 } else if (r.daysLeft <= 7) {
-                  badgeClass = "bg-amber-50 border-amber-300 text-amber-800";
+                  badgeClass = "bg-amber-50 border-amber-300 text-amber-800 font-bold";
                   badgeText = `⚠️ ~${r.daysLeft} din bache`;
                 }
 
                 return `
-                  <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between shadow-2xs">
+                  <div class="bg-slate-50 hover:bg-slate-100/80 p-3 rounded-xl border border-slate-200/90 flex items-center justify-between shadow-2xs transition-all">
                     <div>
-                      <div class="text-xs font-bold text-slate-800">${r.patientName} <span class="text-[10px] text-slate-400">(${r.patientId})</span></div>
-                      <div class="text-[11px] font-semibold text-[#0f766e]">${r.medName}</div>
+                      <div class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                        <span>${r.patientName}</span>
+                        <span class="text-[10px] font-mono text-slate-400">(${r.patientId})</span>
+                      </div>
+                      <div class="text-[11px] font-bold text-teal-800 mt-0.5">${r.medName}</div>
                       <div class="text-[10px] text-slate-500 font-medium">Live Stock: <b>${r.remainingTabs} tabs</b> • Dose: <b>${r.perDay} tab/day</b></div>
                     </div>
-                    <div class="flex items-center gap-1.5">
-                      <span class="text-[10px] font-bold px-2 py-1 rounded-lg border ${badgeClass}">${badgeText}</span>
-                      <a href="tel:${r.patientPhone}" class="w-7 h-7 rounded-lg bg-slate-200 flex items-center justify-center text-xs" title="Call">📞</a>
-                      <a href="https://wa.me/91${r.patientPhone}?text=${encodeURIComponent(`Namaste ${r.patientName} ji,\nShree Ganesh Medicals se reminder: Aapki dawai *${r.medName}* ka stock lagbhag *${r.daysLeft} din* ka bacha hai (${r.remainingTabs} tabs baaki).`)}" target="_blank" class="w-7 h-7 rounded-lg bg-[#25D366] text-white flex items-center justify-center text-xs" title="WhatsApp">💬</a>
+                    <div class="flex items-center gap-2">
+                      <span class="text-[10px] px-2 py-1 rounded-lg border ${badgeClass}">${badgeText}</span>
+                      <div class="flex items-center gap-1">
+                        <a href="tel:${r.patientPhone}" class="w-7 h-7 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-700 flex items-center justify-center text-xs transition-all active:scale-90" title="Call">📞</a>
+                        <a href="https://wa.me/91${r.patientPhone}?text=${encodeURIComponent(`Namaste ${r.patientName} ji,\nShree Ganesh Medicals se reminder:\nAapki dawai *${r.medName}* ka stock lagbhag *${r.daysLeft} din* ka bacha hai (${r.remainingTabs} tabs baaki).\nKripya regular dose ke liye samay par refill kara lein.`)}" target="_blank" class="w-7 h-7 rounded-lg bg-[#25D366] hover:bg-[#20ba5a] text-white flex items-center justify-center text-xs transition-all active:scale-90" title="WhatsApp Reminder">💬</a>
+                      </div>
                     </div>
                   </div>
                 `;
@@ -552,23 +636,23 @@
       }
 
       root.innerHTML = `
+        ${kpiHtml}
         ${stockTrackerHtml}
 
-        <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center justify-between mb-3">
           <div>
-            <h2 class="text-base font-bold text-slate-800">Patients Record</h2>
-            <p class="text-xs text-slate-500">${patients.length} Active Profiles</p>
+            <h2 class="text-sm font-black text-slate-800 uppercase tracking-wide">Patient Registry</h2>
           </div>
-          <button onclick="openPatientModal()" class="bg-[#0f766e] text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-sm">
-            + Add Patient
+          <button onclick="openPatientModal()" class="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm active:scale-95 transition-all flex items-center gap-1">
+            <span>+</span> Add Patient
           </button>
         </div>
 
         <div class="relative mb-4">
-          <input type="text" oninput="filterPatients(this.value)" placeholder="🔍 Search patient by name or phone..." class="w-full bg-white px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs">
+          <input type="text" oninput="filterPatients(this.value)" placeholder="🔍 Search patient by name, phone or condition..." class="w-full bg-white px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs shadow-2xs focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
         </div>
 
-        <div id="patientListContainer" class="space-y-3">
+        <div id="patientListContainer" class="space-y-2.5">
           ${renderPatientCardList(patients)}
         </div>
       `;
@@ -578,8 +662,9 @@
       if (!patients || patients.length === 0) {
         return `
           <div class="bg-white border border-slate-200 rounded-2xl p-8 text-center text-slate-400">
-            <p class="text-xs font-semibold">No patient records available locally.</p>
-            <p class="text-[11px] mt-1">Tap <b>🔄 (Sync)</b> to pull from GitHub, or tap <b>+ Add Patient</b> to create one.</p>
+            <span class="text-3xl block mb-2">📂</span>
+            <p class="text-xs font-bold text-slate-600">No patient profiles created yet.</p>
+            <p class="text-[11px] mt-1 text-slate-400">Tap <b>🔄 (Sync)</b> to pull cloud data, or tap <b>+ Add Patient</b> to create one.</p>
           </div>
         `;
       }
@@ -587,18 +672,18 @@
       return patients.map(p => {
         const activeMeds = (p.medicines || []).filter(m => !m.discontinued);
         return `
-          <div onclick="navigateTo('#/patient/${p.id}')" class="bg-white border border-slate-200 p-4 rounded-2xl shadow-2xs cursor-pointer hover:border-[#0f766e]">
+          <div onclick="navigateTo('#/patient/${p.id}')" class="bg-white border border-slate-200 hover:border-teal-600 p-4 rounded-2xl shadow-2xs cursor-pointer transition-all active:scale-[0.99]">
             <div class="flex items-start justify-between">
               <div>
-                <h3 class="text-sm font-bold text-slate-900">${p.name}</h3>
+                <h3 class="text-sm font-black text-slate-900">${p.name}</h3>
                 <p class="text-xs text-slate-500 mt-0.5">📞 ${p.phone} • 🩺 ${p.doctor || 'General'}</p>
               </div>
-              <span class="text-[10px] font-mono font-bold bg-teal-50 text-teal-700 border border-teal-200 px-2 py-0.5 rounded-lg">${p.id}</span>
+              <span class="text-[10px] font-mono font-bold bg-teal-50 text-teal-800 border border-teal-200 px-2 py-0.5 rounded-lg shadow-2xs">${p.id}</span>
             </div>
-            ${p.conditions ? `<div class="mt-2 text-[11px] text-slate-600 bg-slate-50 px-2.5 py-1 rounded-md inline-block">🩺 ${p.conditions}</div>` : ''}
-            <div class="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span class="font-semibold text-slate-700">💊 ${activeMeds.length} Active Doses</span>
-              <span class="text-[#0f766e] font-bold text-[11px]">View Timeline →</span>
+            ${p.conditions ? `<div class="mt-2 text-[11px] font-medium text-slate-600 bg-slate-50 px-2.5 py-1 rounded-md inline-block">🩺 ${p.conditions}</div>` : ''}
+            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="font-bold text-slate-700">💊 ${activeMeds.length} Active Doses</span>
+              <span class="text-teal-700 font-bold text-[11px] flex items-center gap-1">View Timeline →</span>
             </div>
           </div>
         `;
@@ -613,28 +698,28 @@
 
       root.innerHTML = `
         <div class="mb-4 flex items-center justify-between">
-          <button onclick="navigateTo('')" class="text-xs font-bold text-slate-600">← All Patients</button>
+          <button onclick="navigateTo('')" class="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1">← All Patients</button>
           <div class="flex items-center gap-2">
-            <button onclick="openShareModal('${p.id}')" class="bg-[#0f766e] text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm">📲 Patient Pass</button>
-            <button onclick="editPatientProfile('${p.id}')" class="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-1.5 rounded-xl">✏️</button>
+            <button onclick="openShareModal('${p.id}')" class="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-1.5 active:scale-95 transition-all">📲 Patient Pass</button>
+            <button onclick="editPatientProfile('${p.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-all">✏️</button>
           </div>
         </div>
 
-        <div class="bg-[#0f766e] text-white p-4 rounded-2xl shadow-sm mb-4">
+        <div class="bg-gradient-to-r from-teal-800 to-emerald-800 text-white p-4 rounded-2xl shadow-md mb-4 border border-teal-700">
           <div class="flex justify-between items-start">
             <div>
-              <span class="text-[10px] font-mono bg-white/20 px-2 py-0.5 rounded-md font-semibold">${p.id}</span>
-              <h2 class="text-lg font-bold mt-1">${p.name}</h2>
+              <span class="text-[10px] font-mono bg-white/20 px-2 py-0.5 rounded-md font-extrabold tracking-wide">${p.id}</span>
+              <h2 class="text-lg font-black mt-1">${p.name}</h2>
               <p class="text-xs text-teal-100 mt-0.5">📞 ${p.phone} • 🩺 ${p.doctor || 'General'}</p>
             </div>
-            <a href="tel:${p.phone}" class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-xs">📞</a>
+            <a href="tel:${p.phone}" class="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-sm shadow-xs">📞</a>
           </div>
-          ${p.allergies ? `<div class="mt-2 text-xs text-red-100 bg-red-500/30 p-2 rounded-lg font-medium">⚠️ Allergy: ${p.allergies}</div>` : ''}
+          ${p.allergies ? `<div class="mt-2.5 text-xs text-red-100 bg-red-900/40 p-2 rounded-lg font-medium border border-red-500/30">⚠️ Allergy: ${p.allergies}</div>` : ''}
         </div>
 
         <div class="flex items-center justify-between mb-3">
-          <h3 class="text-sm font-bold text-slate-800">Current Medications</h3>
-          <button onclick="openMedModal()" class="bg-[#0f766e] text-white text-xs font-bold px-3 py-1.5 rounded-xl">+ Add Medicine</button>
+          <h3 class="text-xs font-black text-slate-800 uppercase tracking-wide">Medication Timeline</h3>
+          <button onclick="openMedModal()" class="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm active:scale-95 transition-all">+ Add Medicine</button>
         </div>
 
         <div class="space-y-3">
@@ -647,13 +732,13 @@
 
     async function renderPatientDirectView(patientId, accessKey, repoParam) {
       const root = document.getElementById('viewRoot');
-      root.innerHTML = `<div class="p-8 text-center text-xs text-slate-500">Loading Patient Timeline...</div>`;
+      root.innerHTML = `<div class="p-12 text-center text-xs text-slate-500 flex flex-col items-center gap-2"><span class="text-2xl animate-spin">🔄</span><p>Securely loading Patient Timeline...</p></div>`;
 
       try {
         const repo = repoParam || APP_STATE.config.repo;
         const remote = await GitHubSync.pullRemoteData(repo);
         const records = (remote && remote.data) ? (remote.data.records || remote.data.patients || {}) : {};
-        if (!records[patientId]) throw new Error("Patient not found in cloud database.");
+        if (!records[patientId]) throw new Error("Patient record not found in cloud database.");
 
         const cipherObj = records[patientId];
         let patientData = null;
@@ -668,23 +753,30 @@
           try { patientData = await CryptoEngine.decrypt(cipherObj, APP_STATE.patientKeys[patientId]); } catch (e) {}
         }
 
-        if (!patientData) throw new Error("Record key mismatch. Please re-save from admin counter.");
+        if (!patientData) throw new Error("Decryption Key Mismatch. Please re-save once from counter.");
 
         const activeMeds = (patientData.medicines || []).filter(m => !m.discontinued);
 
         root.innerHTML = `
-          <div class="bg-[#0f766e] text-white rounded-2xl p-4 shadow-sm mb-4">
-            <span class="text-[10px] font-mono bg-white/20 px-2 py-0.5 rounded font-bold">${patientData.id}</span>
-            <h2 class="text-lg font-bold mt-1">${patientData.name}</h2>
-            <p class="text-xs text-teal-100">Consulting Doctor: <b>${patientData.doctor || 'General'}</b></p>
+          <div class="bg-gradient-to-r from-teal-800 to-emerald-800 text-white rounded-2xl p-4 shadow-md mb-4 border border-teal-700">
+            <span class="text-[10px] font-mono bg-white/20 px-2 py-0.5 rounded font-black tracking-wide">${patientData.id}</span>
+            <h2 class="text-xl font-black mt-1 leading-tight">${patientData.name}</h2>
+            <p class="text-xs text-teal-100 mt-0.5">Consulting Doctor: <b>${patientData.doctor || 'General'}</b></p>
+            ${patientData.allergies ? `<div class="mt-2 text-xs text-red-200 bg-red-900/40 p-2 rounded-lg font-medium">⚠️ Allergy: ${patientData.allergies}</div>` : ''}
           </div>
-          <div class="mb-3 text-xs font-bold text-slate-500 uppercase">Aapki Active Dawaiyan (${activeMeds.length})</div>
+          <div class="mb-3 text-xs font-black text-slate-500 uppercase tracking-wide">Aapki Active Dawaiyan (${activeMeds.length})</div>
           <div class="space-y-3">${renderMedicationList(patientData.medicines || [], true, patientData.created || patientData.lastUpdated)}</div>
+          
+          <div class="mt-8 text-center text-xs text-slate-400 space-y-1">
+            <p class="font-bold text-slate-600">Shree Ganesh Medicals, Gondia</p>
+            <p class="text-[10px]">Kisi bhi query ya refill ke liye store par call karein.</p>
+          </div>
         `;
       } catch (err) {
         root.innerHTML = `
-          <div class="bg-white p-6 rounded-2xl border border-red-200 text-center space-y-2">
-            <h3 class="text-sm font-bold text-red-600">Access Error</h3>
+          <div class="bg-white p-6 rounded-2xl border border-rose-200 text-center space-y-2 shadow-sm">
+            <span class="text-3xl block">⚠️</span>
+            <h3 class="text-sm font-bold text-rose-600">Access Error</h3>
             <p class="text-xs text-slate-500">${err.message}</p>
           </div>
         `;
@@ -693,7 +785,7 @@
 
     function renderMedicationList(meds, isReadOnly = false, patientCreatedDate = null) {
       const activeMeds = (meds || []).filter(m => !m.discontinued);
-      if (activeMeds.length === 0) return `<div class="bg-white border rounded-2xl p-6 text-center text-xs text-slate-400">No active medicines.</div>`;
+      if (activeMeds.length === 0) return `<div class="bg-white border rounded-2xl p-6 text-center text-xs text-slate-400">No active medicines logged.</div>`;
 
       return activeMeds.map((m, idx) => {
         const stats = calculateLiveMedStats(m, patientCreatedDate);
@@ -701,31 +793,48 @@
           <div class="bg-white border border-slate-200 rounded-2xl p-4 shadow-2xs">
             <div class="flex justify-between items-start">
               <div>
-                <h4 class="text-sm font-bold text-slate-900">${m.name}</h4>
-                <p class="text-[10px] text-slate-500 mt-0.5">
+                <h4 class="text-sm font-black text-slate-900">${m.name}</h4>
+                <p class="text-[10px] text-slate-500 font-semibold mt-0.5">
                   <span>🍽️ ${m.meal === 'before' ? 'Khaane Se Pehle' : 'Khaane Ke Baad'}</span>
                   <span> • 📅 Shuru: <b>${m.startDate ? (typeof m.startDate === 'string' ? m.startDate : new Date(m.startDate).toISOString().slice(0, 10)) : 'N/A'}</b></span>
                 </p>
               </div>
               ${!isReadOnly ? `
                 <div class="flex items-center gap-1">
-                  <button onclick="editMedicine(${idx})" class="text-[#0f766e] text-xs font-bold px-2 py-1 bg-teal-50 rounded-lg">Edit</button>
-                  <button onclick="stopMedicine(${idx})" class="text-rose-600 text-xs font-bold px-2 py-1 bg-rose-50 rounded-lg">Stop</button>
+                  <button onclick="editMedicine(${idx})" class="text-teal-700 text-xs font-bold px-2.5 py-1 bg-teal-50 rounded-lg hover:bg-teal-100 transition-all">Edit</button>
+                  <button onclick="stopMedicine(${idx})" class="text-rose-600 text-xs font-bold px-2.5 py-1 bg-rose-50 rounded-lg hover:bg-rose-100 transition-all">Stop</button>
                 </div>
               ` : ''}
             </div>
+
+            <!-- TIME PILLS WITH DOSES -->
             <div class="grid grid-cols-4 gap-1.5 mt-3 text-center text-[11px]">
-              <div class="p-1.5 border rounded-lg ${m.morn ? 'bg-amber-50 border-amber-200 font-bold text-amber-900' : 'bg-slate-50 text-slate-400'}">🌅 ${m.morn ? m.mornQty || 1 : '-'}</div>
-              <div class="p-1.5 border rounded-lg ${m.noon ? 'bg-blue-50 border-blue-200 font-bold text-blue-900' : 'bg-slate-50 text-slate-400'}">☀️ ${m.noon ? m.noonQty || 1 : '-'}</div>
-              <div class="p-1.5 border rounded-lg ${m.eve ? 'bg-orange-50 border-orange-200 font-bold text-orange-900' : 'bg-slate-50 text-slate-400'}">🌇 ${m.eve ? m.eveQty || 1 : '-'}</div>
-              <div class="p-1.5 border rounded-lg ${m.night ? 'bg-indigo-50 border-indigo-200 font-bold text-indigo-900' : 'bg-slate-50 text-slate-400'}">🌙 ${m.night ? m.nightQty || 0.5 : '-'}</div>
+              <div class="p-2 border rounded-xl ${m.morn ? 'bg-amber-50 border-amber-200 font-bold text-amber-900' : 'bg-slate-50 text-slate-400 border-slate-100'}">
+                <div>🌅 Subah</div>
+                <div class="font-black mt-0.5">${m.morn ? `${m.mornQty || 1} tab` : '-'}</div>
+              </div>
+              <div class="p-2 border rounded-xl ${m.noon ? 'bg-blue-50 border-blue-200 font-bold text-blue-900' : 'bg-slate-50 text-slate-400 border-slate-100'}">
+                <div>☀️ Dupahar</div>
+                <div class="font-black mt-0.5">${m.noon ? `${m.noonQty || 1} tab` : '-'}</div>
+              </div>
+              <div class="p-2 border rounded-xl ${m.eve ? 'bg-orange-50 border-orange-200 font-bold text-orange-900' : 'bg-slate-50 text-slate-400 border-slate-100'}">
+                <div>🌇 Shaam</div>
+                <div class="font-black mt-0.5">${m.eve ? `${m.eveQty || 1} tab` : '-'}</div>
+              </div>
+              <div class="p-2 border rounded-xl ${m.night ? 'bg-indigo-50 border-indigo-200 font-bold text-indigo-900' : 'bg-slate-50 text-slate-400 border-slate-100'}">
+                <div>🌙 Raat</div>
+                <div class="font-black mt-0.5">${m.night ? `${m.nightQty || 0.5} tab` : '-'}</div>
+              </div>
             </div>
-            <div class="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span class="text-slate-500">Live Stock: <b>${stats.remainingTabs} tabs</b></span>
-              <span class="font-bold px-2 py-0.5 rounded-md ${stats.daysLeft <= 3 ? 'bg-rose-100 text-rose-800' : 'bg-emerald-50 text-emerald-700'}">
+
+            <div class="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
+              <span class="text-slate-500 font-medium">Live Stock: <b>${stats.remainingTabs} tabs</b></span>
+              <span class="font-bold px-2.5 py-1 rounded-lg ${stats.daysLeft <= 3 ? 'bg-rose-100 text-rose-800 animate-pulse' : (stats.daysLeft <= 7 ? 'bg-amber-100 text-amber-800' : 'bg-emerald-50 text-emerald-800')}">
                 ${stats.daysLeft <= 3 ? `🚨 Refill in ${stats.daysLeft} din` : `✅ ~${stats.daysLeft} din baaki`}
               </span>
             </div>
+
+            ${m.instructions ? `<div class="mt-2 text-[11px] text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100">💡 <b>Note:</b> ${m.instructions}</div>` : ''}
           </div>
         `;
       }).join('');
@@ -737,10 +846,10 @@
 
       return `
         <div class="mt-6 pt-4 border-t border-slate-200">
-          <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-3">🕒 Stopped & Revised Prescriptions</h3>
+          <h3 class="text-xs font-black text-slate-500 uppercase tracking-wide mb-3">🕒 Stopped & Revised Prescriptions</h3>
           <div class="space-y-2">
             ${revisedMeds.map(m => `
-              <div class="bg-slate-100 border border-slate-200 rounded-xl p-3 text-xs">
+              <div class="bg-slate-100/80 border border-slate-200 rounded-xl p-3 text-xs">
                 <div class="flex justify-between items-center">
                   <span class="font-bold text-slate-700 ${m.discontinued ? 'line-through text-slate-400' : ''}">${m.name}</span>
                   <span class="text-[10px] font-bold px-2 py-0.5 rounded ${m.discontinued ? 'bg-rose-200 text-rose-800' : 'bg-amber-200 text-amber-800'}">${m.discontinued ? 'Stopped' : 'Revised'}</span>
@@ -754,7 +863,7 @@
     }
 
     // ==========================================
-    // 6. PATIENT & MEDICINE ACTIONS
+    // 6. ACTIONS & FORMS
     // ==========================================
     function openPatientModal(editId = null) {
       const formId = document.getElementById('pFormId');
@@ -828,7 +937,6 @@
       document.getElementById('nightCheck').checked = false;
       toggleDoseQty('morn'); toggleDoseQty('noon'); toggleDoseQty('eve'); toggleDoseQty('night');
       
-      // Default start date to Today's date (YYYY-MM-DD)
       document.getElementById('mStartDate').value = new Date().toISOString().slice(0, 10);
       document.getElementById('mMeal').value = 'after';
       document.getElementById('mTotalQty').value = '30';
@@ -845,7 +953,6 @@
 
       document.getElementById('medEditIndex').value = idx;
       
-      // Format existing startDate to YYYY-MM-DD for datepicker
       let startDateStr = new Date().toISOString().slice(0, 10);
       if (m.startDate) {
         startDateStr = typeof m.startDate === 'string' && m.startDate.includes('-') 
@@ -970,7 +1077,7 @@
 
       new QRCode(canvas, { text: shareUrl, width: 160, height: 160, colorDark: "#0f766e", colorLight: "#ffffff" });
 
-      const msg = `Namaste ${p.name} ji,\nShree Ganesh Medicals se aapka Digital Rx Link yeh raha:\n${shareUrl}\n\nPatient ID: ${p.id}`;
+      const msg = `Namaste ${p.name} ji,\nShree Ganesh Medicals se aapka Digital Rx Timeline Link yeh raha:\n${shareUrl}\n\nPatient ID: ${p.id}`;
       document.getElementById('modalWaBtn').onclick = () => window.open(`https://wa.me/91${p.phone}?text=${encodeURIComponent(msg)}`, '_blank');
       window.currentShareUrl = shareUrl;
       openModal('shareModal');
@@ -979,12 +1086,12 @@
     function copyShareUrl() {
       if (window.currentShareUrl) {
         navigator.clipboard.writeText(window.currentShareUrl);
-        showToast('Link copied!');
+        showToast('Link copied to clipboard!');
       }
     }
 
     // ==========================================
-    // 8. CLOUD SYNC & BACKUP
+    // 8. CLOUD SYNC & LOCAL RECOVERY
     // ==========================================
     async function manualSync(silent = false) {
       try {
@@ -1065,22 +1172,15 @@
 
     function exportToExcel() {
       const patients = Object.values(APP_STATE.patients || {});
-      if (patients.length === 0) return alert("No patient data!");
+      if (patients.length === 0) return alert("No patient data to export!");
 
       const rows = [["Patient ID", "Name", "Phone", "Doctor", "Medicine", "Start Date", "Live Stock", "Per Day", "Days Left"]];
       patients.forEach(p => {
         (p.medicines || []).forEach(m => {
           const stats = calculateLiveMedStats(m, p.created || p.lastUpdated);
           rows.push([
-            `"${p.id}"`, 
-            `"${p.name}"`, 
-            `"${p.phone}"`, 
-            `"${p.doctor || ''}"`, 
-            `"${m.name}"`, 
-            `"${m.startDate || ''}"`,
-            `"${stats.remainingTabs}"`, 
-            `"${stats.perDay}"`, 
-            `"${stats.daysLeft}"`
+            `"${p.id}"`, `"${p.name}"`, `"${p.phone}"`, `"${p.doctor || ''}"`, `"${m.name}"`, 
+            `"${m.startDate || ''}"`, `"${stats.remainingTabs}"`, `"${stats.perDay}"`, `"${stats.daysLeft}"`
           ]);
         });
       });
@@ -1113,7 +1213,7 @@
             saveLocalData();
             renderAdminDashboard();
             closeModal('settingsModal');
-            showToast("Backup restored!");
+            showToast("Backup restored successfully!");
             if (APP_STATE.config.token && APP_STATE.config.pass) await saveToGitHubCloud();
           }
         } catch (err) { alert("Restore Failed"); }
@@ -1123,7 +1223,7 @@
     }
 
     // ==========================================
-    // 9. HELPERS & ROUTER INITIALIZER
+    // 9. GENERAL HELPERS & LIFECYCLE
     // ==========================================
     function saveLocalData() {
       localStorage.setItem('sgm_patients', JSON.stringify(APP_STATE.patients));
@@ -1158,7 +1258,7 @@
     function showToast(msg) {
       const c = document.getElementById('toastContainer');
       const toast = document.createElement('div');
-      toast.className = 'bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg';
+      toast.className = 'bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-xl shadow-lg border border-slate-700 pointer-events-auto';
       toast.innerText = msg;
       c.appendChild(toast);
       setTimeout(() => { toast.remove(); }, 2500);
@@ -1197,9 +1297,28 @@
       }
     }
 
+    function setupPWA() {
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        APP_STATE.deferredPrompt = e;
+        const banner = document.getElementById('pwaBanner');
+        if (banner) banner.classList.remove('hidden');
+      });
+    }
+
+    function installPWA() {
+      if (APP_STATE.deferredPrompt) {
+        APP_STATE.deferredPrompt.prompt();
+        APP_STATE.deferredPrompt.userChoice.then(() => {
+          document.getElementById('pwaBanner').classList.add('hidden');
+        });
+      }
+    }
+
     window.addEventListener('hashchange', router);
     window.addEventListener('DOMContentLoaded', async () => {
       populateSettingsForm();
+      setupPWA();
       await router();
       if (!APP_STATE.isPatientView && APP_STATE.config.token && APP_STATE.config.pass) {
         manualSync(true);
