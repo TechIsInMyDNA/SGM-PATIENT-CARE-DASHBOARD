@@ -62,7 +62,7 @@
     </div>
   </header>
 
-  <!-- PWA INSTALL BANNER -->
+  <!-- PWA BANNER -->
   <div id="pwaBanner" class="hidden bg-gradient-to-r from-emerald-600 to-teal-700 text-white px-4 py-2.5 text-xs flex items-center justify-between shadow-md max-w-3xl mx-auto w-full">
     <div class="flex items-center space-x-2">
       <span class="text-base">📲</span>
@@ -84,7 +84,7 @@
     </div>
   </main>
 
-  <!-- SETTINGS & BACKUP/RESTORE MODAL -->
+  <!-- SETTINGS MODAL -->
   <div id="settingsModal" class="fixed inset-0 bg-slate-900/60 z-50 backdrop-blur-xs hidden items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-5 sheet-up max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200">
       <div class="flex justify-between items-center pb-3 border-b border-slate-100">
@@ -142,7 +142,7 @@
     </div>
   </div>
 
-  <!-- PATIENT CREATE/EDIT MODAL -->
+  <!-- PATIENT MODAL -->
   <div id="patientModal" class="fixed inset-0 bg-slate-900/60 z-50 backdrop-blur-xs hidden items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-5 sheet-up max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200">
       <div class="flex justify-between items-center pb-3 border-b border-slate-100">
@@ -184,7 +184,7 @@
     </div>
   </div>
 
-  <!-- MEDICINE CREATE/EDIT MODAL -->
+  <!-- MEDICINE ADD/EDIT MODAL -->
   <div id="medModal" class="fixed inset-0 bg-slate-900/60 z-50 backdrop-blur-xs hidden items-end sm:items-center justify-center p-0 sm:p-4">
     <div class="bg-white w-full max-w-lg rounded-t-2xl sm:rounded-2xl p-5 sheet-up max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200">
       <div class="flex justify-between items-center pb-3 border-b border-slate-100">
@@ -247,7 +247,6 @@
           </div>
         </div>
 
-        <!-- VISIBLE CALENDAR START DATE & QUANTITY -->
         <div class="grid grid-cols-2 gap-2.5">
           <div>
             <label class="block font-bold text-slate-700 mb-1">📅 Medicine Issue / Start Date *</label>
@@ -273,13 +272,12 @@
           <input type="text" id="mInstructions" placeholder="e.g. BP high hone par / Paani khoob piyein" class="w-full px-3 py-2 border rounded-lg text-xs focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
         </div>
 
-        <!-- DOCTOR REVISION TOGGLE -->
         <div id="reviseContainer" class="p-3 bg-rose-50 border border-rose-200 rounded-xl space-y-1.5">
           <label class="flex items-center space-x-2 cursor-pointer">
             <input type="checkbox" id="isDoctorRevised" onchange="toggleRevNote(this.checked)" class="w-4 h-4 rounded text-rose-600 focus:ring-rose-500">
             <span class="text-xs font-bold text-rose-900">📝 Mark as Doctor Revised / Changed Dose</span>
           </label>
-          <p class="text-[10px] text-rose-700">Tick only if doctor altered the dose timing or power. Normal typo edits do not need this.</p>
+          <p class="text-[10px] text-rose-700">Tick only if doctor altered the dose timing or power.</p>
           <div id="reviseReasonWrap" class="hidden pt-1">
             <input type="text" id="mChangeReason" placeholder="Reason (e.g. Doctor reduced dose after normal BP)" class="w-full px-3 py-1.5 border border-rose-300 rounded-lg text-xs bg-white">
           </div>
@@ -288,6 +286,52 @@
         <div class="pt-2 flex gap-2">
           <button type="submit" class="flex-1 bg-teal-700 hover:bg-teal-800 text-white font-bold py-2.5 rounded-xl text-xs shadow-md active:scale-95 transition-all">Save Medicine</button>
           <button type="button" onclick="closeModal('medModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 text-xs hover:bg-slate-50">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- NEW REFILL / STOCK TOP-UP MODAL (OPTIONAL INVOICE) -->
+  <div id="refillModal" class="fixed inset-0 bg-slate-900/60 z-50 backdrop-blur-xs hidden items-end sm:items-center justify-center p-0 sm:p-4">
+    <div class="bg-white w-full max-w-sm rounded-t-2xl sm:rounded-2xl p-5 sheet-up max-h-[92vh] overflow-y-auto shadow-2xl border border-slate-200">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100">
+        <div class="flex items-center gap-2">
+          <span class="text-lg">🔄</span>
+          <h2 class="text-sm font-black text-slate-800 uppercase tracking-wide">Refill / Add Stock</h2>
+        </div>
+        <button onclick="closeModal('refillModal')" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 font-bold flex items-center justify-center text-xs">✕</button>
+      </div>
+
+      <form onsubmit="handleRefillSubmit(event)" class="mt-4 space-y-3.5 text-xs">
+        <input type="hidden" id="refillMedIndex">
+
+        <div class="p-3 bg-teal-50 border border-teal-200 rounded-xl">
+          <div class="text-[10px] font-bold text-teal-700 uppercase">Medicine</div>
+          <div id="refillMedName" class="text-sm font-black text-teal-900 mt-0.5">--</div>
+          <div id="refillCurrentStatus" class="text-[11px] font-medium text-teal-800 mt-1">Live Stock: -- tabs (-- din)</div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Nayi Goliyan Di Gayi (Tablets Added) *</label>
+          <input type="number" id="refillNewQty" required min="1" step="1" placeholder="e.g. 30" class="w-full px-3 py-2 border rounded-lg text-sm font-black text-slate-900 focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
+          <p class="text-[10px] text-slate-400 mt-0.5">Yeh goliyan live stock me jud jayengi aur din badh jayenge.</p>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">📅 Refill / Delivery Date *</label>
+          <input type="date" id="refillDate" required class="w-full px-3 py-2 border rounded-lg bg-white text-xs font-semibold focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Bill / Invoice No. <span class="text-slate-400 font-normal">(Optional)</span></label>
+          <input type="text" id="refillInvoiceNo" placeholder="e.g. INV-1048 / Slip #25" class="w-full px-3 py-2 border rounded-lg text-xs font-mono focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button type="submit" class="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2.5 rounded-xl text-xs shadow-md active:scale-95 transition-all">
+            + Confirm Refill
+          </button>
+          <button type="button" onclick="closeModal('refillModal')" class="px-4 py-2.5 border rounded-xl font-semibold text-slate-600 text-xs hover:bg-slate-50">Cancel</button>
         </div>
       </form>
     </div>
@@ -345,7 +389,6 @@
 
     // ==========================================
     // 2. CRYPTO ENGINE (AES-GCM 256-BIT)
-    // Cross-compatible with Windows 7 Chrome
     // ==========================================
     const CryptoEngine = {
       async deriveKey(passphrase, salt) {
@@ -415,7 +458,7 @@
     };
 
     // ==========================================
-    // 3. GITHUB API LIVE SYNC (AUTO SHA MANAGEMENT)
+    // 3. GITHUB API LIVE SYNC (AUTO SHA HANDLER)
     // ==========================================
     const GitHubSync = {
       async pullRemoteData(targetRepo) {
@@ -530,7 +573,7 @@
     }
 
     // ==========================================
-    // 5. DHASU UI RENDERING ENGINE
+    // 5. UI RENDERING ENGINE
     // ==========================================
     function renderAdminDashboard() {
       const root = document.getElementById('viewRoot');
@@ -564,7 +607,6 @@
 
       allActiveMedications.sort((a, b) => a.daysLeft - b.daysLeft);
 
-      // KPI Metric Cards
       const kpiHtml = `
         <div class="grid grid-cols-3 gap-2.5 mb-4">
           <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between">
@@ -762,7 +804,7 @@
             <span class="text-[10px] font-mono bg-white/20 px-2 py-0.5 rounded font-black tracking-wide">${patientData.id}</span>
             <h2 class="text-xl font-black mt-1 leading-tight">${patientData.name}</h2>
             <p class="text-xs text-teal-100 mt-0.5">Consulting Doctor: <b>${patientData.doctor || 'General'}</b></p>
-            ${patientData.allergies ? `<div class="mt-2 text-xs text-red-200 bg-red-900/40 p-2 rounded-lg font-medium">⚠️ Allergy: ${patientData.allergies}</div>` : ''}
+            ${patientData.allergies ? `<div class="mt-2 text-xs text-red-200 bg-red-900/40 p-2 rounded-lg font-medium border border-red-500/30">⚠️ Allergy: ${patientData.allergies}</div>` : ''}
           </div>
           <div class="mb-3 text-xs font-black text-slate-500 uppercase tracking-wide">Aapki Active Dawaiyan (${activeMeds.length})</div>
           <div class="space-y-3">${renderMedicationList(patientData.medicines || [], true, patientData.created || patientData.lastUpdated)}</div>
@@ -797,10 +839,15 @@
                 <p class="text-[10px] text-slate-500 font-semibold mt-0.5">
                   <span>🍽️ ${m.meal === 'before' ? 'Khaane Se Pehle' : 'Khaane Ke Baad'}</span>
                   <span> • 📅 Shuru: <b>${m.startDate ? (typeof m.startDate === 'string' ? m.startDate : new Date(m.startDate).toISOString().slice(0, 10)) : 'N/A'}</b></span>
+                  ${m.lastInvoice ? `<span class="text-teal-700"> • 🧾 Inv: <b>${m.lastInvoice}</b></span>` : ''}
                 </p>
               </div>
               ${!isReadOnly ? `
                 <div class="flex items-center gap-1">
+                  <!-- REFILL BUTTON -->
+                  <button onclick="openRefillModal(${idx})" class="text-emerald-700 text-xs font-bold px-2.5 py-1 bg-emerald-50 rounded-lg hover:bg-emerald-100 transition-all flex items-center gap-1" title="Top-up stock & add tablets">
+                    <span>🔄</span> Refill
+                  </button>
                   <button onclick="editMedicine(${idx})" class="text-teal-700 text-xs font-bold px-2.5 py-1 bg-teal-50 rounded-lg hover:bg-teal-100 transition-all">Edit</button>
                   <button onclick="stopMedicine(${idx})" class="text-rose-600 text-xs font-bold px-2.5 py-1 bg-rose-50 rounded-lg hover:bg-rose-100 transition-all">Stop</button>
                 </div>
@@ -983,6 +1030,60 @@
       openModal('medModal');
     }
 
+    // ==========================================
+    // REFILL / STOCK TOP-UP ENGINE
+    // ==========================================
+    function openRefillModal(idx) {
+      const p = APP_STATE.patients[APP_STATE.currentPatientId];
+      const m = p.medicines[idx];
+      const stats = calculateLiveMedStats(m, p.created || p.lastUpdated);
+
+      document.getElementById('refillMedIndex').value = idx;
+      document.getElementById('refillMedName').innerText = m.name;
+      document.getElementById('refillCurrentStatus').innerText = `Live Stock: ${stats.remainingTabs} tabs (Bache hue: ~${stats.daysLeft} din)`;
+      document.getElementById('refillNewQty').value = '30';
+      document.getElementById('refillDate').value = new Date().toISOString().slice(0, 10);
+      document.getElementById('refillInvoiceNo').value = '';
+
+      openModal('refillModal');
+    }
+
+    async function handleRefillSubmit(e) {
+      e.preventDefault();
+      const p = APP_STATE.patients[APP_STATE.currentPatientId];
+      const idx = parseInt(document.getElementById('refillMedIndex').value);
+      const m = p.medicines[idx];
+
+      const newAddedTabs = parseFloat(document.getElementById('refillNewQty').value) || 0;
+      const refillDate = document.getElementById('refillDate').value || new Date().toISOString().slice(0, 10);
+      const invoiceNo = document.getElementById('refillInvoiceNo').value.trim();
+
+      // Calculate live remaining balance before top-up
+      const currentStats = calculateLiveMedStats(m, p.created || p.lastUpdated);
+      const newTotalRemaining = currentStats.remainingTabs + newAddedTabs;
+
+      // Update medicine base: New stock starts counting from this refill date
+      m.initialQty = newTotalRemaining;
+      m.qty = newTotalRemaining;
+      m.startDate = refillDate;
+      m.lastRefillDate = new Date(refillDate).getTime();
+      if (invoiceNo) m.lastInvoice = invoiceNo;
+
+      if (!m.history) m.history = [];
+      m.history.unshift({
+        date: new Date(refillDate).toLocaleDateString(),
+        reason: `Stock Refilled: +${newAddedTabs} tabs (Total Live: ${newTotalRemaining})${invoiceNo ? ' • Inv #' + invoiceNo : ''}`
+      });
+
+      p.lastUpdated = Date.now();
+      saveLocalData();
+      closeModal('refillModal');
+      renderAdminPatientView(p.id);
+      showToast(`+${newAddedTabs} tabs refilled successfully! Live days updated.`);
+
+      if (APP_STATE.config.token && APP_STATE.config.pass) await saveToGitHubCloud();
+    }
+
     function toggleDoseQty(slot) {
       const isChecked = document.getElementById(`${slot}Check`).checked;
       const wrap = document.getElementById(`${slot}QtyWrap`);
@@ -1030,6 +1131,7 @@
           medData.history.unshift({ date: new Date().toLocaleDateString(), reason: document.getElementById('mChangeReason').value.trim() || 'Dose revised' });
         } else {
           medData.history = old.history || [];
+          if (old.lastInvoice) medData.lastInvoice = old.lastInvoice;
         }
         p.medicines[editIdx] = medData;
       } else {
@@ -1091,7 +1193,7 @@
     }
 
     // ==========================================
-    // 8. CLOUD SYNC & LOCAL RECOVERY
+    // 8. CLOUD SYNC & RECOVERY
     // ==========================================
     async function manualSync(silent = false) {
       try {
@@ -1174,13 +1276,13 @@
       const patients = Object.values(APP_STATE.patients || {});
       if (patients.length === 0) return alert("No patient data to export!");
 
-      const rows = [["Patient ID", "Name", "Phone", "Doctor", "Medicine", "Start Date", "Live Stock", "Per Day", "Days Left"]];
+      const rows = [["Patient ID", "Name", "Phone", "Doctor", "Medicine", "Start Date", "Last Invoice", "Live Stock", "Per Day", "Days Left"]];
       patients.forEach(p => {
         (p.medicines || []).forEach(m => {
           const stats = calculateLiveMedStats(m, p.created || p.lastUpdated);
           rows.push([
             `"${p.id}"`, `"${p.name}"`, `"${p.phone}"`, `"${p.doctor || ''}"`, `"${m.name}"`, 
-            `"${m.startDate || ''}"`, `"${stats.remainingTabs}"`, `"${stats.perDay}"`, `"${stats.daysLeft}"`
+            `"${m.startDate || ''}"`, `"${m.lastInvoice || ''}"`, `"${stats.remainingTabs}"`, `"${stats.perDay}"`, `"${stats.daysLeft}"`
           ]);
         });
       });
