@@ -453,7 +453,7 @@
     };
 
     // ==========================================
-    // 3. GITHUB API LIVE SYNC
+    // 3. GITHUB API LIVE SYNC (AUTO SHA HANDLER)
     // ==========================================
     const GitHubSync = {
       async pullRemoteData(targetRepo) {
@@ -753,7 +753,7 @@
           <button onclick="navigateTo('')" class="text-xs font-bold text-slate-600 hover:text-slate-900 flex items-center gap-1">← All Patients</button>
           <div class="flex items-center gap-2">
             <button onclick="openShareModal('${p.id}')" class="bg-teal-700 hover:bg-teal-800 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-sm flex items-center gap-1.5 active:scale-95 transition-all">📲 Patient Pass</button>
-            <button onclick="editPatientProfile('${p.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-all">✏️️</button>
+            <button onclick="editPatientProfile('${p.id}')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold px-2.5 py-1.5 rounded-xl transition-all">✏️</button>
           </div>
         </div>
 
@@ -783,7 +783,7 @@
     }
 
     // ==========================================
-    // PATIENT PASS VIEW WITH REMINDER TIMING SETUP
+    // PATIENT PASS VIEW WITH DIRECT WEB PUSH REMINDER
     // ==========================================
     async function renderPatientDirectView(patientId, accessKey, repoParam) {
       const root = document.getElementById('viewRoot');
@@ -812,6 +812,9 @@
 
         const activeMeds = (patientData.medicines || []).filter(m => !m.discontinued);
 
+        // Check if Web Notification is enabled
+        const notifGranted = ("Notification" in window) && Notification.permission === "granted";
+
         root.innerHTML = `
           <div class="bg-gradient-to-r from-teal-800 to-emerald-800 text-white rounded-2xl p-4 shadow-md mb-4 border border-teal-700">
             <span class="text-[10px] font-mono bg-white/20 px-2 py-0.5 rounded font-black tracking-wide">${patientData.id}</span>
@@ -820,9 +823,23 @@
             ${patientData.allergies ? `<div class="mt-2 text-xs text-red-200 bg-red-900/40 p-2 rounded-lg font-medium border border-red-500/30">⚠️ Allergy: ${patientData.allergies}</div>` : ''}
           </div>
 
+          <!-- DIRECT WEB PUSH NOTIFICATION BANNER -->
+          <div class="mb-4 bg-teal-50 border border-teal-200 rounded-2xl p-3.5 flex items-center justify-between shadow-xs">
+            <div class="flex items-center gap-2.5">
+              <span class="text-xl">🔔</span>
+              <div>
+                <h4 class="text-xs font-bold text-teal-950">Roz Dawa Ka Mobile Notification</h4>
+                <p class="text-[10px] text-teal-700 mt-0.5">Aapke chune hue waqt par phone par automatic alert aayega.</p>
+              </div>
+            </div>
+            <button id="webPushToggleBtn" onclick="requestWebPushPermission()" class="px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all ${notifGranted ? 'bg-emerald-600 text-white' : 'bg-teal-700 hover:bg-teal-800 text-white'}">
+              ${notifGranted ? '✅ Active' : '🔔 Chaalu Karein'}
+            </button>
+          </div>
+
           <div class="mb-3 flex items-center justify-between">
             <h3 class="text-xs font-black text-slate-500 uppercase tracking-wide">Aapki Active Dawaiyan (${activeMeds.length})</h3>
-            <span class="text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">Personal Dose Timings</span>
+            <span class="text-[10px] text-teal-700 font-bold bg-teal-50 px-2 py-0.5 rounded-full border border-teal-200">Dose Time Settings</span>
           </div>
 
           <div class="space-y-3">
@@ -834,6 +851,9 @@
             <p class="text-[10px]">Kisi bhi query ya refill ke liye store par call karein.</p>
           </div>
         `;
+
+        // Start local reminder checker on patient device
+        startLocalReminderWatcher(activeMeds);
       } catch (err) {
         root.innerHTML = `
           <div class="bg-white p-6 rounded-2xl border border-rose-200 text-center space-y-2 shadow-sm">
@@ -843,6 +863,61 @@
           </div>
         `;
       }
+    }
+
+    // Direct Web Notification Permission Handler
+    async function requestWebPushPermission() {
+      if (!("Notification" in window)) {
+        alert("Aapka browser Web Notification support nahi karta.");
+        return;
+      }
+
+      const permission = await Notification.requestPermission();
+      const btn = document.getElementById('webPushToggleBtn');
+      if (permission === "granted") {
+        if (btn) {
+          btn.className = "px-3 py-1.5 rounded-xl text-xs font-bold shadow-xs bg-emerald-600 text-white";
+          btn.innerText = "✅ Active";
+        }
+        showToast("Notification permission active ho gayi! Chune hue waqt par alert aayega.");
+        new Notification("💊 SGM Dose Reminder Active", {
+          body: "Shree Ganesh Medicals: Aapke dawaiyo ke reminders active ho chuke hain!",
+          icon: "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💊</text></svg>"
+        });
+      } else {
+        showToast("Permission deny ho gayi. Browser settings me jakar allow karein.");
+      }
+    }
+
+    // Local background reminder checker (Triggers alert banner when time matches)
+    function startLocalReminderWatcher(meds) {
+      if (window._sgmReminderInterval) clearInterval(window._sgmReminderInterval);
+
+      window._sgmReminderInterval = setInterval(() => {
+        if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+        const now = new Date();
+        const currentHours = String(now.getHours()).padStart(2, '0');
+        const currentMinutes = String(now.getMinutes()).padStart(2, '0');
+        const currentTimeStr = `${currentHours}:${currentMinutes}`;
+
+        meds.forEach(m => {
+          if (!m.userTimings) return;
+          const slots = ['morn', 'noon', 'eve', 'night'];
+          slots.forEach(slot => {
+            if (m.userTimings[slot] === currentTimeStr) {
+              const lastTriggerKey = `sgm_last_notif_${m.name}_${slot}_${now.toDateString()}`;
+              if (!localStorage.getItem(lastTriggerKey)) {
+                localStorage.setItem(lastTriggerKey, "true");
+                new Notification(`💊 Dawai Reminder: ${m.name}`, {
+                  body: `Waqt ho gaya hai! Kripya apna ${slot.toUpperCase()} dose lein (${m.meal === 'before' ? 'Khaane se pehle' : 'Khaane ke baad'}).`,
+                  icon: "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💊</text></svg>"
+                });
+              }
+            }
+          });
+        });
+      }, 30000); // Checks every 30 seconds
     }
 
     function renderPatientInteractiveMedList(p, meds, accessKey, repo) {
@@ -895,12 +970,9 @@
                 ` : ''}
               </div>
 
-              <div class="flex gap-2 pt-1">
-                <button onclick="savePatientTimings('${p.id}', ${idx}, '${accessKey}', '${repo}')" class="flex-1 bg-teal-700 hover:bg-teal-800 text-white font-bold py-1.5 px-3 rounded-lg text-xs flex items-center justify-center gap-1 shadow-xs active:scale-95 transition-all">
-                  <span>💾</span> Save My Time (Store Sync)
-                </button>
-                <button onclick="downloadCalendarReminder('${m.name}', ${idx})" class="bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold py-1.5 px-2.5 rounded-lg text-xs flex items-center justify-center gap-1 shadow-2xs" title="Add to phone calendar/alarm">
-                  <span>📅</span> Alarm
+              <div class="pt-1">
+                <button onclick="savePatientTimings('${p.id}', ${idx}, '${accessKey}', '${repo}')" class="w-full bg-teal-700 hover:bg-teal-800 text-white font-bold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-xs active:scale-95 transition-all">
+                  <span>💾</span> Save My Time & Set Reminder
                 </button>
               </div>
             </div>
@@ -926,10 +998,8 @@
           savedAt: new Date().toISOString()
         };
 
-        // Cache locally on patient's device
         localStorage.setItem(`sgm_timing_${patientId}_${medIdx}`, JSON.stringify(updatedTimings));
 
-        // Pull and update remote cloud records
         const remote = await GitHubSync.pullRemoteData(repo);
         const records = remote.data.records || remote.data.patients || {};
         const cipherObj = records[patientId];
@@ -942,40 +1012,15 @@
           await GitHubSync.pushRemoteData(remote.data);
         }
 
-        showToast("Aapka reminder timing store ke sath save ho gaya! ✅");
+        showToast("Timing save ho gaya aur store ke sath sync ho gaya! ✅");
+
+        // Ask for web push if not granted already
+        if ("Notification" in window && Notification.permission !== "granted") {
+          requestWebPushPermission();
+        }
       } catch (err) {
-        // Fallback: save in localStorage so it stays active on their phone
         showToast("Timing aapke phone me save ho gaya hai! ✅");
       }
-    }
-
-    function downloadCalendarReminder(medName, medIdx) {
-      const morn = document.getElementById(`time_morn_${medIdx}`) ? document.getElementById(`time_morn_${medIdx}`).value : '08:00';
-      const night = document.getElementById(`time_night_${medIdx}`) ? document.getElementById(`time_night_${medIdx}`).value : '21:00';
-
-      const icsData = [
-        "BEGIN:VCALENDAR",
-        "VERSION:2.0",
-        "PRODID:-//Shree Ganesh Medicals//Rx Reminder//EN",
-        "BEGIN:VEVENT",
-        `SUMMARY:💊 Dawai Reminder: ${medName}`,
-        `DESCRIPTION:Shree Ganesh Medicals dose reminder: ${medName} lene ka samay ho gaya hai.`,
-        "RRULE:FREQ=DAILY",
-        "BEGIN:VALARM",
-        "TRIGGER:-PT0M",
-        "ACTION:DISPLAY",
-        `DESCRIPTION:Dawai lene ka samay!`,
-        "END:VALARM",
-        "END:VEVENT",
-        "END:VCALENDAR"
-      ].join("\r\n");
-
-      const blob = new Blob([icsData], { type: "text/calendar;charset=utf-8" });
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `SGM_Reminder_${medName.replace(/\s+/g, '_')}.ics`;
-      a.click();
-      showToast("Phone Alarm Calendar file download ho gayi! Isko open karein.");
     }
 
     function renderMedicationList(meds, isReadOnly = false, patientCreatedDate = null) {
