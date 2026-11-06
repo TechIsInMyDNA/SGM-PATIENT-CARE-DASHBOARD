@@ -119,9 +119,16 @@
           <label class="block font-bold text-slate-700 mb-1">GitHub Repository (owner/repo):</label>
           <input type="text" id="cfgRepo" placeholder="TechIsInMyDNA/SGM-PATIENT-CARE-DASHBOARD" class="w-full px-3 py-2 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
         </div>
-        <div>
-          <label class="block font-bold text-slate-700 mb-1">Database File Path:</label>
-          <input type="text" id="cfgPath" value="data.json" class="w-full px-3 py-2 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Data Branch:</label>
+            <input type="text" id="cfgBranch" value="data" placeholder="data" class="w-full px-3 py-2 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
+            <p class="text-[9px] text-slate-400 mt-0.5">Pages redeploy nahi hoga</p>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Database File:</label>
+            <input type="text" id="cfgPath" value="data.json" class="w-full px-3 py-2 border rounded-lg font-mono text-xs focus:ring-2 focus:ring-teal-500 focus:outline-hidden">
+          </div>
         </div>
         <div class="p-3 bg-amber-50/80 border border-amber-200 rounded-xl space-y-1">
           <label class="block font-black text-amber-900 flex items-center gap-1.5">
@@ -364,6 +371,7 @@
     const DEFAULT_CONFIG = {
       token: '',
       repo: 'TechIsInMyDNA/SGM-PATIENT-CARE-DASHBOARD',
+      branch: 'data',
       path: 'data.json',
       pass: ''
     };
@@ -453,24 +461,79 @@
     };
 
     // ==========================================
-    // 3. GITHUB API LIVE SYNC (AUTO SHA HANDLER)
+    // 3. GITHUB API DEDICATED DATA BRANCH SYNC
+    // (Auto-creates 'data' branch to prevent GitHub Pages rebuilds)
     // ==========================================
     const GitHubSync = {
+      async ensureDataBranch(repo, branch, token) {
+        if (!token || !repo) return;
+        try {
+          // Check if data branch exists
+          const branchRes = await fetch(`https://api.github.com/repos/${repo}/branches/${branch}`, {
+            headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+          });
+          if (branchRes.ok) return; // Branch already exists
+
+          // If not exists (404), fetch default branch SHA to fork from
+          const repoRes = await fetch(`https://api.github.com/repos/${repo}`, {
+            headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+          });
+          if (!repoRes.ok) return;
+          const repoData = await repoRes.json();
+          const defaultBranch = repoData.default_branch || 'main';
+
+          const refRes = await fetch(`https://api.github.com/repos/${repo}/git/ref/heads/${defaultBranch}`, {
+            headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' }
+          });
+          if (!refRes.ok) return;
+          const refData = await refRes.json();
+          const baseSha = refData.object.sha;
+
+          // Create the data branch
+          await fetch(`https://api.github.com/repos/${repo}/git/refs`, {
+            method: 'POST',
+            headers: { 'Authorization': `token ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ref: `refs/heads/${branch}`, sha: baseSha })
+          });
+          console.log(`Created new data branch: ${branch}`);
+        } catch (e) {
+          console.warn("Branch check/create note:", e);
+        }
+      },
+
       async pullRemoteData(targetRepo) {
         const repo = targetRepo || APP_STATE.config.repo;
+        const branch = APP_STATE.config.branch || 'data';
         const path = APP_STATE.config.path || 'data.json';
         const token = APP_STATE.config.token;
 
         if (!repo) throw new Error("Repo name missing in settings");
 
         if (token) {
-          const url = `https://api.github.com/repos/${repo}/contents/${path}`;
+          // Ensure data branch exists on first run
+          await this.ensureDataBranch(repo, branch, token);
+
+          const url = `https://api.github.com/repos/${repo}/contents/${path}?ref=${branch}`;
           const res = await fetch(url, {
             headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
             cache: 'no-store'
           });
 
-          if (res.status === 404) return { sha: null, data: { version: 1, records: {} } };
+          if (res.status === 404) {
+            // Check fallback from default branch if migrating
+            const fallbackUrl = `https://api.github.com/repos/${repo}/contents/${path}`;
+            const fbRes = await fetch(fallbackUrl, {
+              headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
+              cache: 'no-store'
+            });
+            if (fbRes.ok) {
+              const fbJson = await fbRes.json();
+              const content = decodeURIComponent(escape(atob(fbJson.content)));
+              return { sha: null, data: JSON.parse(content) };
+            }
+            return { sha: null, data: { version: 1, records: {} } };
+          }
+
           if (!res.ok) throw new Error(`GitHub: ${res.statusText}`);
 
           const json = await res.json();
@@ -481,25 +544,38 @@
           return { sha: json.sha, data: JSON.parse(content) };
         }
 
-        const rawUrl = `https://raw.githubusercontent.com/${repo}/main/${path}`;
-        const rawRes = await fetch(rawUrl, { cache: 'no-store' });
-        if (rawRes.ok) {
-          const rJson = await rawRes.json();
-          return { sha: null, data: rJson };
+        // Unauthenticated read (e.g. Patient View from raw data branch)
+        const rawUrls = [
+          `https://raw.githubusercontent.com/${repo}/${branch}/${path}`,
+          `https://raw.githubusercontent.com/${repo}/main/${path}`,
+          `https://raw.githubusercontent.com/${repo}/master/${path}`
+        ];
+
+        for (let u of rawUrls) {
+          try {
+            const rawRes = await fetch(u, { cache: 'no-store' });
+            if (rawRes.ok) {
+              const rJson = await rawRes.json();
+              return { sha: null, data: rJson };
+            }
+          } catch (e) {}
         }
 
-        throw new Error("Could not fetch remote file");
+        throw new Error("Could not fetch remote data file from data branch");
       },
 
       async pushRemoteData(dataPayload) {
-        const { repo, path, token } = APP_STATE.config;
+        const { repo, branch, path, token } = APP_STATE.config;
+        const targetBranch = branch || 'data';
         if (!token || !repo) throw new Error("Token/Repo missing in settings");
+
+        await this.ensureDataBranch(repo, targetBranch, token);
 
         const url = `https://api.github.com/repos/${repo}/contents/${path}`;
         
         let currentSha = APP_STATE.fileSha;
         try {
-          const checkRes = await fetch(url, {
+          const checkRes = await fetch(`${url}?ref=${targetBranch}`, {
             headers: { 'Authorization': `token ${token}`, 'Accept': 'application/vnd.github.v3+json' },
             cache: 'no-store'
           });
@@ -508,11 +584,17 @@
             currentSha = checkJson.sha;
             APP_STATE.fileSha = currentSha;
             localStorage.setItem('sgm_file_sha', currentSha);
+          } else if (checkRes.status === 404) {
+            currentSha = null;
           }
         } catch (e) {}
 
         const utf8Content = btoa(unescape(encodeURIComponent(JSON.stringify(dataPayload, null, 2))));
-        const bodyData = { message: `SGM Rx Update: ${new Date().toISOString()}`, content: utf8Content };
+        const bodyData = { 
+          message: `SGM Rx Update [skip ci]: ${new Date().toISOString()}`, 
+          content: utf8Content,
+          branch: targetBranch
+        };
         if (currentSha) bodyData.sha = currentSha;
 
         const res = await fetch(url, {
@@ -811,8 +893,6 @@
         if (!patientData) throw new Error("Decryption Key Mismatch. Please re-save once from counter.");
 
         const activeMeds = (patientData.medicines || []).filter(m => !m.discontinued);
-
-        // Check if Web Notification is enabled
         const notifGranted = ("Notification" in window) && Notification.permission === "granted";
 
         root.innerHTML = `
@@ -823,7 +903,6 @@
             ${patientData.allergies ? `<div class="mt-2 text-xs text-red-200 bg-red-900/40 p-2 rounded-lg font-medium border border-red-500/30">⚠️ Allergy: ${patientData.allergies}</div>` : ''}
           </div>
 
-          <!-- DIRECT WEB PUSH NOTIFICATION BANNER -->
           <div class="mb-4 bg-teal-50 border border-teal-200 rounded-2xl p-3.5 flex items-center justify-between shadow-xs">
             <div class="flex items-center gap-2.5">
               <span class="text-xl">🔔</span>
@@ -852,7 +931,6 @@
           </div>
         `;
 
-        // Start local reminder checker on patient device
         startLocalReminderWatcher(activeMeds);
       } catch (err) {
         root.innerHTML = `
@@ -865,7 +943,6 @@
       }
     }
 
-    // Direct Web Notification Permission Handler
     async function requestWebPushPermission() {
       if (!("Notification" in window)) {
         alert("Aapka browser Web Notification support nahi karta.");
@@ -889,7 +966,6 @@
       }
     }
 
-    // Local background reminder checker (Triggers alert banner when time matches)
     function startLocalReminderWatcher(meds) {
       if (window._sgmReminderInterval) clearInterval(window._sgmReminderInterval);
 
@@ -917,7 +993,7 @@
             }
           });
         });
-      }, 30000); // Checks every 30 seconds
+      }, 30000);
     }
 
     function renderPatientInteractiveMedList(p, meds, accessKey, repo) {
@@ -1014,7 +1090,6 @@
 
         showToast("Timing save ho gaya aur store ke sath sync ho gaya! ✅");
 
-        // Ask for web push if not granted already
         if ("Notification" in window && Notification.permission !== "granted") {
           requestWebPushPermission();
         }
@@ -1437,7 +1512,7 @@
 
           saveLocalData();
           if (!APP_STATE.isPatientView) renderAdminDashboard();
-          if (!silent) showToast(`Synced ${count} patient records!`);
+          if (!silent) showToast(`Synced ${count} patient records from data branch!`);
         }
       } catch (err) {
         if (!silent) alert('Sync Error: ' + err.message);
@@ -1464,7 +1539,7 @@
         cloudJson.updated_at = new Date().toISOString();
 
         await GitHubSync.pushRemoteData(cloudJson);
-        showToast("GitHub Live Sync Successful! ✅");
+        showToast("GitHub Live Sync Successful! (Pages Rebuild Bypass ✅)");
       } catch (err) {
         showToast("Cloud sync error: " + err.message);
       }
@@ -1536,18 +1611,20 @@
       APP_STATE.config = {
         token: document.getElementById('cfgToken').value.trim(),
         repo: document.getElementById('cfgRepo').value.trim(),
+        branch: document.getElementById('cfgBranch').value.trim() || 'data',
         path: document.getElementById('cfgPath').value.trim() || 'data.json',
         pass: document.getElementById('cfgPass').value.trim()
       };
       localStorage.setItem('sgm_cfg', JSON.stringify(APP_STATE.config));
       closeModal('settingsModal');
-      showToast('Settings saved. Syncing...');
+      showToast('Settings saved. Syncing with data branch...');
       manualSync();
     }
 
     function populateSettingsForm() {
       document.getElementById('cfgToken').value = APP_STATE.config.token || '';
       document.getElementById('cfgRepo').value = APP_STATE.config.repo || '';
+      document.getElementById('cfgBranch').value = APP_STATE.config.branch || 'data';
       document.getElementById('cfgPath').value = APP_STATE.config.path || 'data.json';
       document.getElementById('cfgPass').value = APP_STATE.config.pass || '';
     }
